@@ -1,0 +1,171 @@
+/* WebscribeAI — Meta Box Styles */
+
+.webscribeai-metabox {
+    padding: 4px 0;
+}
+
+.webscribeai-notice {
+    padding: 8px 12px;
+    border-left: 4px solid #dba617;
+    background: #fff8e1;
+    margin-bottom: 12px;
+}
+
+.webscribeai-notice a {
+    font-weight: 600;
+}
+
+.webscribeai-current-meta {
+    background: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+}
+
+.webscribeai-current-meta p {
+    margin: 4px 0;
+    font-size: 13px;
+    color: #444;
+}
+
+.webscribeai-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.webscribeai-override-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.webscribeai-generate-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+}
+
+.webscribeai-generate-btn .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    margin-top: 1px;
+}
+
+.webscribeai-result {
+    border: 1px solid #b3d4fc;
+    border-radius: 4px;
+    background: #eef6ff;
+    padding: 12px 14px;
+    margin-top: 10px;
+}
+
+.webscribeai-result-inner p {
+    margin-bottom: 10px;
+}
+
+.webscribeai-result-inner label {
+    display: block;
+}
+
+.webscribeai-result-inner strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #555;
+}
+
+.webscribeai-apply-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 5px;
+    margin-right: 6px;
+}
+
+.webscribeai-apply-btn .dashicons {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+}
+
+.webscribeai-spinner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #555;
+    margin-top: 10px;
+}
+
+.webscribeai-spinner .spinner {
+    margin: 0;
+    float: none;
+}
+
+.webscribeai-message {
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    margin-top: 10px;
+}
+
+.webscribeai-message.is-success {
+    background: #e8f5e9;
+    border-left: 4px solid #43a047;
+    color: #2e7d32;
+}
+
+.webscribeai-message.is-error {
+    background: #fdecea;
+    border-left: 4px solid #e53935;
+    color: #b71c1c;
+}
+
+.webscribeai-message.is-info {
+    background: #e3f2fd;
+    border-left: 4px solid #1e88e5;
+    color: #0d47a1;
+}
+.webscribeai-sidebar-action strong {
+    display: block;
+    margin-bottom: 8px;
+}
+.webscribeai-sidebar-action .webscribeai-notice {
+    margin: 0 0 10px;
+    padding: 6px 10px;
+    font-size: 12px;
+}
+.webscribeai-sidebar-generate-btn {
+    width: 100%;
+    justify-content: center;
+}
+.webscribeai-sidebar-message {
+    margin-top: 8px;
+    padding: 6px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    line-height: 1.4;
+}
+.webscribeai-sidebar-message.is-success {
+    background: #e8f5e9;
+    border-left: 3px solid #43a047;
+    color: #2e7d32;
+}
+.webscribeai-sidebar-message.is-error {
+    background: #ffebee;
+    border-left: 3px solid #e53935;
+    color: #b71c1c;
+}
+.webscribeai-sidebar-message.is-info {
+    background: #e3f2fd;
+    border-left: 3px solid #1e88e5;
+    color: #1565c0;
+}

@@ -1,0 +1,330 @@
+/* WebscribeAI — Admin Settings Styles */
+
+.webscribeai-wrap h1 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.webscribeai-wrap h1 .dashicons {
+    font-size: 26px;
+    width: 26px;
+    height: 26px;
+    color: #2271b1;
+}
+
+/* ---- Bulk Populate ---- */
+
+.webscribeai-bulk-wrap {
+    margin-top: 20px;
+}
+
+.webscribeai-bulk-options {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    max-width: 640px;
+}
+
+.webscribeai-bulk-select-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.webscribeai-bulk-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#webscribeai-bulk-action-select {
+    min-height: 30px;
+}
+
+#webscribeai-bulk-run-all {
+    margin-left: 12px;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #787878 !important;
+    font-size: 12px !important;
+    text-decoration: underline;
+    text-decoration-color: #bbb;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    cursor: pointer;
+}
+
+#webscribeai-bulk-run-all:hover:not(:disabled) {
+    color: #d63638 !important;
+    text-decoration-color: #d63638;
+    background: none !important;
+}
+
+#webscribeai-bulk-run-all:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/* Progress bar */
+
+.webscribeai-progress-bar-wrap {
+    height: 16px;
+    background: #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    max-width: 640px;
+}
+
+.webscribeai-progress-bar {
+    height: 100%;
+    background: #2271b1;
+    border-radius: 8px;
+    width: 0;
+    transition: width 0.3s ease;
+}
+
+#webscribeai-progress-label {
+    font-size: 13px;
+    color: #555;
+}
+
+#webscribeai-bulk-results {
+    padding: 10px 14px;
+    background: #f0f8f0;
+    border-left: 4px solid #43a047;
+    border-radius: 4px;
+    max-width: 640px;
+    font-size: 13px;
+    margin-bottom: 18px;
+}
+
+/* Post list */
+
+.webscribeai-post-list {
+    margin-top: 10px;
+}
+
+.webscribeai-post-list .check-column {
+    width: 2.2em;
+    padding: 8px 10px !important;
+    text-align: center;
+    vertical-align: top;
+}
+
+.webscribeai-post-list thead .check-column input[type="checkbox"] {
+    margin: 0;
+    vertical-align: middle;
+}
+
+.webscribeai-post-group {
+    margin-bottom: 30px;
+}
+
+.webscribeai-post-group-title {
+    margin: 0 0 6px;
+    font-size: 14px;
+}
+
+.webscribeai-post-group-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.webscribeai-count {
+    color: #888;
+    font-weight: normal;
+    font-size: 12px;
+}
+
+/* Fixed column widths — keep all post-type tables aligned */
+.webscribeai-post-table { table-layout: fixed; width: 100%; }
+.webscribeai-post-table .col-check   { width: 2.2em; }
+.webscribeai-post-table .col-title   { width: 22%; }
+.webscribeai-post-table .col-status  { width: 8%; }
+.webscribeai-post-table .col-seo-title { width: 22%; }
+.webscribeai-post-table .col-seo-desc  { width: auto; }
+.webscribeai-post-table .col-result  { width: 7%; }
+
+.webscribeai-cell-title,
+.webscribeai-cell-desc {
+    font-size: 12px;
+    color: #555;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.webscribeai-cell-result {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.webscribeai-cell-result.is-success { color: #2e7d32; }
+.webscribeai-cell-result.is-skipped { color: #795548; }
+.webscribeai-cell-result.is-error   { color: #b71c1c; white-space: normal; overflow-wrap: break-word; }
+.webscribeai-cell-result.is-processing { color: #1565c0; }
+
+/* Row highlight during processing */
+tr.webscribeai-processing {
+    background: #e8f0fe !important;
+}
+
+tr.webscribeai-done {
+    background: #f1f8f1 !important;
+}
+
+tr.webscribeai-errored {
+    background: #fef6f6 !important;
+}
+
+/* Settings tab: API key toggle */
+#webscribeai-toggle-key {
+    margin-left: 6px;
+}
+
+/* ---- Inline editing ---- */
+
+.webscribeai-post-table .col-actions { width: 3.5em; }
+
+.webscribeai-cell-actions {
+    text-align: center;
+    vertical-align: middle;
+    padding: 6px 4px !important;
+}
+
+.webscribeai-meta-text:empty::after {
+    content: '—';
+    color: #bbb;
+}
+
+.webscribeai-edit-btn {
+    color: #2271b1;
+    opacity: 0.55;
+    padding: 2px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+}
+
+.webscribeai-edit-btn:hover,
+.webscribeai-editing .webscribeai-edit-btn {
+    opacity: 1;
+}
+
+.webscribeai-edit-btn .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+.webscribeai-cell-title input.webscribeai-edit-title,
+.webscribeai-cell-desc textarea.webscribeai-edit-desc {
+    font-size: 12px;
+    min-width: 0;
+}
+
+.webscribeai-cell-desc textarea.webscribeai-edit-desc {
+    resize: vertical;
+}
+
+.webscribeai-edit-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.webscribeai-save-btn,
+.webscribeai-cancel-btn {
+    padding: 2px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+}
+
+.webscribeai-save-btn {
+    color: #2e7d32;
+}
+
+.webscribeai-save-btn:hover:not(:disabled) {
+    color: #1b5e20;
+}
+
+.webscribeai-save-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.webscribeai-cancel-btn {
+    color: #b71c1c;
+}
+
+.webscribeai-cancel-btn:hover {
+    color: #7f0000;
+}
+
+.webscribeai-save-btn .dashicons,
+.webscribeai-cancel-btn .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+/* ---- Pagination ---- */
+
+tr.webscribeai-paged-hidden {
+    display: none;
+}
+
+.webscribeai-pagination {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 10px;
+    margin-bottom: 6px;
+}
+
+.webscribeai-pagination .button {
+    min-width: 32px;
+    padding: 0 8px;
+    line-height: 26px;
+    height: 28px;
+    font-size: 13px;
+}
+
+.webscribeai-pagination .button.is-active {
+    background: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
+    box-shadow: none;
+}
+
+.webscribeai-pagination .button.is-active:focus {
+    box-shadow: 0 0 0 1px #fff, 0 0 0 3px #2271b1;
+}
+
+.webscribeai-page-gap {
+    padding: 0 4px;
+    color: #888;
+    font-size: 13px;
+    line-height: 28px;
+}
+
+.webscribeai-page-count {
+    margin-left: 8px;
+    font-size: 12px;
+    color: #888;
+}
