@@ -135,8 +135,11 @@
         var override = $( '#webscribeai-bulk-override' ).prop( 'checked' );
         var postIds  = [];
         $( '.webscribeai-post-checkbox' ).each( function () {
-            // When not overriding, skip posts that already have meta data.
-            if ( ! override && '1' === String( $( this ).data( 'has-meta' ) ) ) {
+            // When not overriding, only skip posts where BOTH title and description
+            // already exist — a post missing just one field still needs processing.
+            var hasTitle       = '1' === String( $( this ).data( 'has-title' ) );
+            var hasDescription = '1' === String( $( this ).data( 'has-description' ) );
+            if ( ! override && hasTitle && hasDescription ) {
                 return;
             }
             postIds.push( parseInt( $( this ).val(), 10 ) );
@@ -562,11 +565,13 @@
     function updateRowMeta( postId, field, title, description ) {
         var $row = $( '#webscribeai-row-' + postId );
 
-        if ( 'title' === field || 'both' === field ) {
+        // title/description come back null when that field was left untouched
+        // (already had a value and override wasn't requested) — don't blank the cell.
+        if ( ( 'title' === field || 'both' === field ) && null !== title ) {
             $row.find( '.webscribeai-cell-title' ).html( $( '<span>' ).addClass( 'webscribeai-meta-text' ).text( title ) );
         }
 
-        if ( 'description' === field || 'both' === field ) {
+        if ( ( 'description' === field || 'both' === field ) && null !== description ) {
             $row.find( '.webscribeai-cell-desc' ).html( $( '<span>' ).addClass( 'webscribeai-meta-text' ).text( description ) );
         }
 

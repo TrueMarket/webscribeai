@@ -71,28 +71,12 @@ class WebscribeAI_SEO {
 	 * @return bool True if data was written, false if skipped.
 	 */
 	public static function save_meta( int $post_id, string $title, string $description, bool $override = false ): bool {
-		// In TSF mode, only TSF fields should gate overwrite decisions.
-		if ( ! $override ) {
-			if ( self::has_tsf() && self::has_existing_tsf_meta( $post_id ) ) {
-				return false;
-			}
+		// Gate title and description independently so a post missing only one
+		// of the two still gets that field generated, even without override.
+		$title_saved       = self::save_meta_field( $post_id, 'title', $title, $override );
+		$description_saved = self::save_meta_field( $post_id, 'description', $description, $override );
 
-			if ( ! self::has_tsf() && self::has_existing_meta( $post_id ) ) {
-				return false;
-			}
-		}
-
-		// Apply title formatting (site title appending, separator enforcement) once for all save targets.
-		$title = self::apply_tsf_title_preferences( $title );
-
-		if ( self::has_tsf() ) {
-			self::save_tsf_meta( $post_id, $title, $description );
-		}
-
-		// Always save to our own meta as a fallback / for standalone use.
-		self::save_standalone_meta( $post_id, $title, $description );
-
-		return true;
+		return $title_saved || $description_saved;
 	}
 
 	/**
@@ -170,19 +154,6 @@ class WebscribeAI_SEO {
 		}
 
 		return true;
-	}
-
-	/**
-	 * Write meta data to The SEO Framework.
-	 *
-	 * @param int    $post_id     Post ID.
-	 * @param string $title       Meta title.
-	 * @param string $description Meta description.
-	 */
-	private static function save_tsf_meta( int $post_id, string $title, string $description ): void {
-		// TSF-compatible keys. Use direct post meta updates for broad compatibility.
-		update_post_meta( $post_id, '_genesis_title', $title );
-		update_post_meta( $post_id, '_genesis_description', $description );
 	}
 
 	/**
@@ -367,18 +338,6 @@ class WebscribeAI_SEO {
 		$desc  = (string) get_post_meta( $post_id, '_genesis_description', true );
 
 		return (bool) ( $title || $desc );
-	}
-
-	/**
-	 * Write meta data to standalone WordPress post meta.
-	 *
-	 * @param int    $post_id     Post ID.
-	 * @param string $title       Meta title.
-	 * @param string $description Meta description.
-	 */
-	private static function save_standalone_meta( int $post_id, string $title, string $description ): void {
-		update_post_meta( $post_id, self::META_TITLE, $title );
-		update_post_meta( $post_id, self::META_DESCRIPTION, $description );
 	}
 
 	/**

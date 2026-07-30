@@ -146,12 +146,15 @@ class WebscribeAI_Ajax {
 			wp_send_json_error( [ 'message' => __( 'Invalid post ID.', 'webscribeai' ) ] );
 		}
 
-		// If not overriding and the relevant field(s) already exist, skip immediately.
-		$already_has = 'both' === $field
-			? WebscribeAI_SEO::has_existing_meta( $post_id )
-			: WebscribeAI_SEO::has_existing_meta_field( $post_id, $field );
+		// Determine which of the requested field(s) actually need (re)generating.
+		// A field that already has a value is left untouched unless overriding —
+		// a post missing only one of title/description still gets that field filled in.
+		$needs_title       = ( 'description' !== $field )
+			&& ( $override || ! WebscribeAI_SEO::has_existing_meta_field( $post_id, 'title' ) );
+		$needs_description = ( 'title' !== $field )
+			&& ( $override || ! WebscribeAI_SEO::has_existing_meta_field( $post_id, 'description' ) );
 
-		if ( ! $override && $already_has ) {
+		if ( ! $needs_title && ! $needs_description ) {
 			wp_send_json_success( [
 				'status'  => 'skipped',
 				'post_id' => $post_id,
@@ -169,19 +172,26 @@ class WebscribeAI_Ajax {
 			] );
 		}
 
-		// Save immediately in bulk mode.
-		if ( 'both' === $field ) {
-			WebscribeAI_SEO::save_meta( $post_id, $result['title'], $result['description'], true );
-		} else {
-			WebscribeAI_SEO::save_meta_field( $post_id, $field, $result[ $field ], true );
+		// Save immediately in bulk mode — only the field(s) that needed it.
+		$saved_title       = null;
+		$saved_description = null;
+
+		if ( $needs_title ) {
+			WebscribeAI_SEO::save_meta_field( $post_id, 'title', $result['title'], true );
+			$saved_title = $result['title'];
+		}
+
+		if ( $needs_description ) {
+			WebscribeAI_SEO::save_meta_field( $post_id, 'description', $result['description'], true );
+			$saved_description = $result['description'];
 		}
 
 		wp_send_json_success( [
 			'status'      => 'generated',
 			'post_id'     => $post_id,
 			'field'       => $field,
-			'title'       => 'description' === $field ? null : $result['title'],
-			'description' => 'title' === $field ? null : $result['description'],
+			'title'       => $saved_title,
+			'description' => $saved_description,
 			'message'     => __( 'Generated and saved.', 'webscribeai' ),
 		] );
 	}

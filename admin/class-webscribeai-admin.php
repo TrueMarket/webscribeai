@@ -365,7 +365,8 @@ class WebscribeAI_Admin {
 													type="checkbox"
 													class="webscribeai-post-checkbox"
 													value="<?php echo esc_attr( $post->ID ); ?>"
-													data-has-meta="<?php echo WebscribeAI_SEO::has_existing_meta( $post->ID ) ? '1' : '0'; ?>"
+													data-has-title="<?php echo WebscribeAI_SEO::has_existing_meta_field( $post->ID, 'title' ) ? '1' : '0'; ?>"
+													data-has-description="<?php echo WebscribeAI_SEO::has_existing_meta_field( $post->ID, 'description' ) ? '1' : '0'; ?>"
 												/>
 											</td>
 											<td>

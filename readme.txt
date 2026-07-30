@@ -4,7 +4,7 @@ Tags: seo, meta, ai
 Requires at least: 6.0
 Tested up to: 7.0.2
 Requires PHP: 8.0
-Stable tag: 0.1.8
+Stable tag: 0.1.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -47,7 +47,7 @@ Get your key from: https://platform.openai.com/api-keys
 
 = Override Existing Meta =
 
-When **unchecked** (default), any post/page that already has a SEO title or description will be skipped during bulk operations and the Apply button in the meta box will warn you before proceeding.
+When **unchecked** (default), title and description are protected independently: if a post/page is missing only one of the two, that one is still generated and saved, while any existing value is left untouched.
 
 When **checked**, existing meta data will be replaced with the AI-generated values.
 
@@ -78,6 +78,9 @@ Currently only The SEO Framework is natively supported. Yoast SEO and Rank Math 
 Updates are served from the plugin's public GitHub repository. When a new release or tag is published there with a higher version number, WordPress will offer the update on the Plugins screen.
 
 == Changelog ==
+
+= 0.1.9 =
+* Fixed: bulk and per-post generation no longer skips a whole post when only one of title/description is missing — the missing field is now generated while an existing field is left untouched (when "Override existing" is off).
 
 = 0.1.8 =
 * Added automatic update checking from the plugin's GitHub repository.
