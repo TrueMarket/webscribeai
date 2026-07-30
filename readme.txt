@@ -81,8 +81,3 @@ Updates are served from the plugin's public GitHub repository. When a new releas
 
 = 0.1.8 =
 * Added automatic update checking from the plugin's GitHub repository.
-
-== Upgrade Notice ==
-
-= 0.1.8 =
-Adds automatic updates delivered from the plugin's GitHub repository.
