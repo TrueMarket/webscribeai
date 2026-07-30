@@ -43,25 +43,16 @@
     // Bulk Populate tab
     // =========================================================================
 
-    // --- Generate button: muted until at least one post/page is selected ---
-
-    function updateGenerateButtonState() {
-        var anyChecked = $( '.webscribeai-post-checkbox:checked' ).length > 0;
-        $( '#webscribeai-bulk-run' ).prop( 'disabled', ! anyChecked || ! cfg.hasApiKey );
-    }
-
     // --- Select / Deselect All ---
 
     $( '#webscribeai-select-all' ).on( 'click', function () {
         $( '.webscribeai-post-checkbox' ).prop( 'checked', true );
         $( '.webscribeai-group-toggle' ).prop( 'checked', true );
-        updateGenerateButtonState();
     } );
 
     $( '#webscribeai-deselect-all' ).on( 'click', function () {
         $( '.webscribeai-post-checkbox' ).prop( 'checked', false );
         $( '.webscribeai-group-toggle' ).prop( 'checked', false );
-        updateGenerateButtonState();
     } );
 
     // --- Group toggle ---
@@ -72,7 +63,6 @@
         $( '.webscribeai-post-checkbox' ).filter( function () {
             return $( this ).closest( 'tr' ).data( 'group' ) === group;
         } ).prop( 'checked', checked );
-        updateGenerateButtonState();
     } );
 
     // --- Shift-click range selection ---
@@ -96,10 +86,7 @@
         }
 
         $lastChecked = $( this );
-        updateGenerateButtonState();
     } );
-
-    updateGenerateButtonState();
 
     // --- Resume banner (shown when a previous run was interrupted) ---
 
@@ -157,28 +144,6 @@
         runBulk( postIds, override, 'both' );
     } );
 
-    // --- Bulk Run (Generate SEO Meta for Selected) ---
-
-    $( '#webscribeai-bulk-run' ).on( 'click', function () {
-        var postIds = [];
-        $( '.webscribeai-post-checkbox:checked' ).each( function () {
-            postIds.push( parseInt( $( this ).val(), 10 ) );
-        } );
-
-        if ( 0 === postIds.length ) {
-            alert( cfg.i18n.noSelection );
-            return;
-        }
-
-        if ( ! window.confirm( cfg.i18n.confirmBulk ) ) {
-            return;
-        }
-
-        var override = $( '#webscribeai-bulk-override' ).prop( 'checked' );
-
-        runBulk( postIds, override, 'both' );
-    } );
-
     // --- Bulk Actions dropdown ---
 
     $( '#webscribeai-bulk-action-select' ).on( 'change', function () {
@@ -203,12 +168,14 @@
             return;
         }
 
-        if ( 'generate_title' === action || 'generate_description' === action ) {
+        if ( 'generate_meta' === action || 'generate_title' === action || 'generate_description' === action ) {
             var genFieldMap = {
+                generate_meta:        'both',
                 generate_title:       'title',
                 generate_description: 'description',
             };
             var genConfirmMap = {
+                generate_meta:        cfg.i18n.confirmBulk,
                 generate_title:       cfg.i18n.confirmGenerateTitle,
                 generate_description: cfg.i18n.confirmGenerateDescription,
             };
@@ -256,7 +223,6 @@
         var skipped   = 0;
         var failed    = 0;
 
-        var $runBtn    = $( '#webscribeai-bulk-run' );
         var $applyBtn  = $( '#webscribeai-bulk-apply' );
         var $runAllBtn = $( '#webscribeai-bulk-run-all' );
         var $progress  = $( '#webscribeai-bulk-progress' );
@@ -266,7 +232,6 @@
         var $stopBtn   = $( '#webscribeai-stop-btn' );
 
         bulkStopRequested = false;
-        $runBtn.prop( 'disabled', true );
         $applyBtn.prop( 'disabled', true );
         $runAllBtn.prop( 'disabled', true );
         $stopBtn.prop( 'disabled', false ).show();
@@ -342,7 +307,6 @@
         function onComplete() {
             clearQueue();
             $stopBtn.hide();
-            updateGenerateButtonState();
             $applyBtn.prop( 'disabled', false );
             $runAllBtn.prop( 'disabled', false );
             $results
@@ -359,7 +323,6 @@
             clearQueue();
             bulkStopRequested = false;
             $stopBtn.hide();
-            updateGenerateButtonState();
             $applyBtn.prop( 'disabled', false );
             $runAllBtn.prop( 'disabled', false );
 
@@ -392,7 +355,6 @@
         var succeeded = 0;
         var failed    = 0;
 
-        var $runBtn    = $( '#webscribeai-bulk-run' );
         var $applyBtn  = $( '#webscribeai-bulk-apply' );
         var $runAllBtn = $( '#webscribeai-bulk-run-all' );
         var $progress  = $( '#webscribeai-bulk-progress' );
@@ -402,7 +364,6 @@
         var $stopBtn   = $( '#webscribeai-stop-btn' );
 
         bulkStopRequested = false;
-        $runBtn.prop( 'disabled', true );
         $applyBtn.prop( 'disabled', true );
         $runAllBtn.prop( 'disabled', true );
         $stopBtn.prop( 'disabled', false ).show();
@@ -466,7 +427,6 @@
 
         function onComplete() {
             $stopBtn.hide();
-            updateGenerateButtonState();
             $applyBtn.prop( 'disabled', false );
             $runAllBtn.prop( 'disabled', false );
             $results
@@ -481,7 +441,6 @@
         function onStop( remainingIds ) {
             bulkStopRequested = false;
             $stopBtn.hide();
-            updateGenerateButtonState();
             $applyBtn.prop( 'disabled', false );
             $runAllBtn.prop( 'disabled', false );
 

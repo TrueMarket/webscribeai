@@ -256,21 +256,15 @@ class WebscribeAI_Admin {
 				<button type="button" class="button" id="webscribeai-deselect-all">
 					<?php esc_html_e( 'Deselect All', 'webscribeai' ); ?>
 				</button>
-				<button
-					type="button"
-					class="button button-primary"
-					id="webscribeai-bulk-run"
-					disabled
-				>
-					<?php esc_html_e( 'Generate SEO Meta for Selected', 'webscribeai' ); ?>
-				</button>
-
 				<div class="webscribeai-bulk-actions-group">
 					<label class="screen-reader-text" for="webscribeai-bulk-action-select">
 						<?php esc_html_e( 'Select bulk action', 'webscribeai' ); ?>
 					</label>
 					<select id="webscribeai-bulk-action-select">
 						<option value=""><?php esc_html_e( 'Bulk actions', 'webscribeai' ); ?></option>
+						<option value="generate_meta" <?php selected( $has_api_key ); ?> <?php disabled( ! $has_api_key ); ?>>
+							<?php esc_html_e( 'Generate SEO Meta (Title + Description)', 'webscribeai' ); ?>
+						</option>
 						<option value="generate_title" <?php disabled( ! $has_api_key ); ?>>
 							<?php esc_html_e( 'Generate SEO Title', 'webscribeai' ); ?>
 						</option>
@@ -287,7 +281,7 @@ class WebscribeAI_Admin {
 							<?php esc_html_e( 'Remove All SEO Meta', 'webscribeai' ); ?>
 						</option>
 					</select>
-					<button type="button" class="button" id="webscribeai-bulk-apply" disabled>
+					<button type="button" class="button" id="webscribeai-bulk-apply" <?php disabled( ! $has_api_key ); ?>>
 						<?php esc_html_e( 'Apply', 'webscribeai' ); ?>
 					</button>
 				</div>

@@ -52,6 +52,21 @@ To see it right away on a site: **Plugins → "Check for updates"** under Webscr
 
 ---
 
+## Or just ask Claude
+
+Instead of doing the steps above by hand, paste this prompt (fill in the version (X.Y.Z) and changelog note):
+
+```
+Release version X.Y.Z of this plugin: "Changelog note"
+
+- Bump the version in webscribeai.php (Version header + WEBSCRIBEAI_VERSION constant) and the Stable tag in readme.txt.
+- Add a changelog entry at the top of readme.txt's == Changelog == section for this version and note.
+- Commit, push, tag vX.Y.Z, and push the tag — per the steps in README.md.
+- Confirm the new version number isn't reused (must be higher than the current Stable tag) before committing.
+```
+
+---
+
 ## Oops — undo a tag
 
 If you tagged the wrong thing:
