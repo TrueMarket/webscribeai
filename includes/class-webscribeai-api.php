@@ -73,7 +73,7 @@ class WebscribeAI_API {
 	public function __construct() {
 		$settings        = (array) get_option( 'webscribeai_settings', [] );
 		$this->provider  = $settings['api_provider'] ?? 'anthropic';
-		$this->api_key   = $settings['api_key'] ?? '';
+		$this->api_key   = WebscribeAI_Encryption::decrypt( $settings['api_key'] ?? '' );
 		$this->model     = ! empty( $settings['ai_model'] )
 			? $settings['ai_model']
 			: ( self::DEFAULT_MODELS[ $this->provider ] ?? '' );

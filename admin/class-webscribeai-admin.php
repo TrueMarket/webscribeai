@@ -142,9 +142,21 @@ class WebscribeAI_Admin {
 			? $input['ai_model']
 			: '';
 
+		$raw_key  = sanitize_text_field( $input['api_key'] ?? '' );
+		$sentinel = sanitize_text_field( $input['api_key_sentinel'] ?? '' );
+		if ( '' !== $sentinel && $raw_key === $sentinel ) {
+			// Submitted unchanged (the masked stand-in came back as-is) — keep the saved key.
+			$existing = (array) get_option( self::OPTION_NAME, [] );
+			$api_key  = $existing['api_key'] ?? '';
+		} else {
+			// The user selected and deleted the masked value (now blank — remove the key),
+			// or replaced it with a new one (encrypt and store it).
+			$api_key = '' !== $raw_key ? WebscribeAI_Encryption::encrypt( $raw_key ) : '';
+		}
+
 		return [
 			'api_provider'       => $provider,
-			'api_key'            => sanitize_text_field( $input['api_key'] ?? '' ),
+			'api_key'            => $api_key,
 			'ai_model'           => $model,
 			'override_existing'  => ! empty( $input['override_existing'] ) ? 1 : 0,
 			'include_site_title' => ! empty( $input['include_site_title'] ) ? 1 : 0,
@@ -448,20 +460,26 @@ class WebscribeAI_Admin {
 	 * Render API key field.
 	 */
 	public function render_field_api_key(): void {
-		$settings = (array) get_option( self::OPTION_NAME, [] );
-		$key      = $settings['api_key'] ?? '';
+		$settings  = (array) get_option( self::OPTION_NAME, [] );
+		$stored    = $settings['api_key'] ?? '';
+		$has_key   = ! empty( $stored );
+		$decrypted = $has_key ? WebscribeAI_Encryption::decrypt( $stored ) : '';
+		// A masked stand-in for the real key: real enough to select and delete like normal
+		// text, but never the actual secret. Submitting it back unchanged means "keep the
+		// saved key"; clearing it means "remove it"; typing something else means "replace it".
+		$sentinel = $has_key ? str_repeat( '•', 20 ) . substr( $decrypted, -4 ) : '';
 		?>
 		<input
 			type="password"
 			id="webscribeai_api_key"
 			name="webscribeai_settings[api_key]"
-			value="<?php echo esc_attr( $key ); ?>"
+			value="<?php echo esc_attr( $sentinel ); ?>"
 			class="regular-text"
 			autocomplete="off"
 		/>
-		<button type="button" class="button" id="webscribeai-toggle-key">
-			<?php esc_html_e( 'Show / Hide', 'webscribeai' ); ?>
-		</button>
+		<?php if ( $has_key ) : ?>
+			<input type="hidden" name="webscribeai_settings[api_key_sentinel]" value="<?php echo esc_attr( $sentinel ); ?>" />
+		<?php endif; ?>
 		<p class="description">
 			<?php
 			printf(

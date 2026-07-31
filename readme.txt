@@ -4,7 +4,7 @@ Tags: seo, meta, ai
 Requires at least: 6.0
 Tested up to: 7.0.2
 Requires PHP: 8.0
-Stable tag: 0.2.0
+Stable tag: 0.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,6 +78,9 @@ Currently only The SEO Framework is natively supported. Yoast SEO and Rank Math 
 Updates are served from the plugin's public GitHub repository. When a new release or tag is published there with a higher version number, WordPress will offer the update on the Plugins screen.
 
 == Changelog ==
+
+= 0.2.1 =
+* Encrypt API key.
 
 = 0.2.0 =
 * Simplified Bulk Populate UI.

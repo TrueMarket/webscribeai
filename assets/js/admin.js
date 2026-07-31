@@ -33,12 +33,6 @@
     var currentProvider = $providerRadios.filter( ':checked' ).val() || 'anthropic';
     filterModelsByProvider( currentProvider );
 
-    // API key show/hide toggle.
-    $( '#webscribeai-toggle-key' ).on( 'click', function () {
-        var $key = $( '#webscribeai_api_key' );
-        $key.attr( 'type', $key.attr( 'type' ) === 'password' ? 'text' : 'password' );
-    } );
-
     // =========================================================================
     // Bulk Populate tab
     // =========================================================================
