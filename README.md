@@ -79,10 +79,7 @@ Got more than one change to ship at once? List them and Claude will add one bull
 
 ```
 Release a new version of this plugin with these changelog notes:
-- "Added monthly 500 generation cap, resetting on the 1st of every month"
-- "Added validity analyzer in bulk populate tab"
-- "Tightened AI prompt to stick closer to 60 characters for titles and 160 for descriptions"
-- "Added confirmation modal after bulk generation"
+- "Removed Freemius vendor code"
 
 - Determine the current version from the Stable tag in readme.txt, then bump the patch number by 1 (e.g. 0.2.1 -> 0.2.2) to get the new version X.Y.Z, unless I've said otherwise.
 - Bump the version in webscribeai.php (Version header + WEBSCRIBEAI_VERSION constant) and the Stable tag in readme.txt to X.Y.Z.
