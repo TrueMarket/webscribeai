@@ -19,11 +19,20 @@ Example: you added Yoast SEO support and want to ship it as version `0.2.0`.
 
 ### 2. Add a changelog note
 
-In `readme.txt`, under `== Changelog ==`, add your entry at the top:
+In `readme.txt`, under `== Changelog ==`, add your entry at the top. A single change:
 
 ```
 = 0.2.0 =
 * Added Yoast SEO support.
+```
+
+Multiple changes in the same release just get one bullet each, under the one version heading:
+
+```
+= 0.2.0 =
+* Added Yoast SEO support.
+* Fixed broken image alt text generation.
+* Improved error messages when the API key is invalid.
 ```
 
 ### 3. Commit, push, tag, push the tag
@@ -54,15 +63,32 @@ To see it right away on a site: **Plugins → "Check for updates"** under Webscr
 
 ## Or just ask Claude
 
-Instead of doing the steps above by hand, paste this prompt (fill in the version (X.Y.Z) and changelog note):
+Instead of doing the steps above by hand, paste this prompt (fill in the changelog note — Claude figures out the next version number for you):
 
 ```
-Release version X.Y.Z of this plugin: "Changelog note"
+Release a new version of this plugin with this changelog note: "Changelog note"
 
-- Bump the version in webscribeai.php (Version header + WEBSCRIBEAI_VERSION constant) and the Stable tag in readme.txt.
-- Add a changelog entry at the top of readme.txt's == Changelog == section for this version and note.
+- Determine the current version from the Stable tag in readme.txt, then bump the patch number by 1 (e.g. 0.2.1 -> 0.2.2) to get the new version X.Y.Z, unless I've said otherwise.
+- Bump the version in webscribeai.php (Version header + WEBSCRIBEAI_VERSION constant) and the Stable tag in readme.txt to X.Y.Z.
+- Add a changelog entry at the top of readme.txt's == Changelog == section for X.Y.Z with this note.
 - Commit, push, tag vX.Y.Z, and push the tag — per the steps in README.md.
-- Confirm the new version number isn't reused (must be higher than the current Stable tag) before committing.
+- Confirm the new version number isn't reused (must be higher than the previous Stable tag) before committing.
+```
+
+Got more than one change to ship at once? List them and Claude will add one bullet per note under the same version heading:
+
+```
+Release a new version of this plugin with these changelog notes:
+- "Added monthly 500 generation cap, resetting on the 1st of every month"
+- "Added validity analyzer in bulk populate tab"
+- "Tightened AI prompt to stick closer to 60 characters for titles and 160 for descriptions"
+- "Added confirmation modal after bulk generation"
+
+- Determine the current version from the Stable tag in readme.txt, then bump the patch number by 1 (e.g. 0.2.1 -> 0.2.2) to get the new version X.Y.Z, unless I've said otherwise.
+- Bump the version in webscribeai.php (Version header + WEBSCRIBEAI_VERSION constant) and the Stable tag in readme.txt to X.Y.Z.
+- Add a changelog entry at the top of readme.txt's == Changelog == section for X.Y.Z, with one bullet per note.
+- Commit, push, tag vX.Y.Z, and push the tag — per the steps in README.md.
+- Confirm the new version number isn't reused (must be higher than the previous Stable tag) before committing.
 ```
 
 ---

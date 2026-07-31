@@ -95,6 +95,17 @@ class WebscribeAI_API {
 			);
 		}
 
+		if ( ! WebscribeAI_Usage::has_remaining() ) {
+			return new WP_Error(
+				'webscribeai_limit_reached',
+				sprintf(
+					/* translators: %d: monthly generation limit */
+					__( 'Monthly AI generation limit reached (%d). The limit resets on the 1st of next month.', 'webscribeai' ),
+					WebscribeAI_Usage::get_limit()
+				)
+			);
+		}
+
 		$post = get_post( $post_id );
 		if ( ! $post ) {
 			return new WP_Error(
@@ -114,9 +125,15 @@ class WebscribeAI_API {
 
 		$prompt = $this->build_prompt( $post->post_title, $content, $this->build_title_format_instructions(), $this->keywords_primary, $this->keywords_secondary );
 
-		return 'anthropic' === $this->provider
+		$result = 'anthropic' === $this->provider
 			? $this->call_anthropic( $prompt )
 			: $this->call_openai( $prompt );
+
+		if ( ! is_wp_error( $result ) ) {
+			WebscribeAI_Usage::increment();
+		}
+
+		return $result;
 	}
 
 	/**
@@ -312,8 +329,9 @@ class WebscribeAI_API {
 			'You are an SEO expert. Given the following page title and content, generate an SEO-optimised meta title and meta description.
 
 Rules:
-- Meta title: 50–60 characters, engaging, includes the main keyword.
-- Meta description: 120–160 characters, compelling summary that encourages clicks, includes the main keyword naturally.
+- Meta title: 50-60 characters, MUST NOT exceed 60 characters (including spaces) under any circumstances. Aim for 50-60. Engaging, includes the main keyword.
+- Meta description: 120-160 characters, MUST NOT exceed 160 characters (including spaces) under any circumstances. Aim for 120-160. Compelling summary that encourages clicks, includes the main keyword naturally.
+- Before responding, count the characters in your title and description and shorten them if either exceeds its maximum.
 - Title format preferences:%s%s
 - Description opening style: %s
 - Do NOT open the description with generic phrases like "Discover", "Learn how", "Find out", "Are you", "In this", "This page", or "Welcome".
@@ -424,14 +442,7 @@ Page Content:
 			}
 		}
 
-		if ( '' === trim( $text ) && 'max_tokens' === $stop_reason ) {
-			return new WP_Error(
-				'webscribeai_truncated',
-				__( 'The AI response was cut off before any text was produced, likely because the model spent its full token budget on internal reasoning. Try again, or switch to a different model in WebscribeAI settings.', 'webscribeai' )
-			);
-		}
-
-		return $this->parse_json_response( $text );
+		return $this->parse_json_response( $text, 'max_tokens' === $stop_reason );
 	}
 
 	/**
@@ -480,33 +491,44 @@ Page Content:
 			return new WP_Error( 'webscribeai_api_error', $message );
 		}
 
-		$text          = $body['choices'][0]['message']['content'] ?? '';
+		$message       = $body['choices'][0]['message'] ?? [];
+		$text          = $message['content'] ?? '';
 		$finish_reason = $body['choices'][0]['finish_reason'] ?? '';
 
-		if ( '' === trim( $text ) && 'length' === $finish_reason ) {
+		// Moderation refusals return a populated 'refusal' field and null content
+		// rather than an HTTP error, so they'd otherwise fall through to the
+		// generic parse-error message below.
+		if ( ! empty( $message['refusal'] ) ) {
 			return new WP_Error(
-				'webscribeai_truncated',
-				__( 'The AI response was cut off before any text was produced, likely because the model spent its full token budget on internal reasoning. Try again, or switch to a different model in WebscribeAI settings.', 'webscribeai' )
+				'webscribeai_refusal',
+				__( 'The AI declined to generate SEO meta data for this content (safety filter). Try a different post, or switch models in WebscribeAI settings.', 'webscribeai' )
 			);
 		}
 
-		return $this->parse_json_response( $text );
+		return $this->parse_json_response( (string) $text, 'length' === $finish_reason );
 	}
 
 	/**
 	 * Parse the JSON response from the AI.
 	 *
-	 * @param string $text Raw AI response text.
+	 * @param string $text          Raw AI response text.
+	 * @param bool   $was_truncated Whether the provider reported the response was
+	 *                              cut off by the token limit (e.g. spent its budget
+	 *                              on internal reasoning and got cut off mid-JSON).
 	 * @return array{title: string, description: string}|WP_Error
 	 */
-	private function parse_json_response( string $text ): array|WP_Error {
-		// Strip markdown code fences if present.
-		$text = preg_replace( '/^```(?:json)?\s*/i', '', trim( $text ) );
-		$text = preg_replace( '/\s*```$/', '', $text );
-
-		$data = json_decode( trim( $text ), true );
+	private function parse_json_response( string $text, bool $was_truncated = false ): array|WP_Error {
+		$json = $this->extract_json_object( $text );
+		$data = null !== $json ? $this->decode_json_loose( $json ) : null;
 
 		if ( ! is_array( $data ) || empty( $data['title'] ) || empty( $data['description'] ) ) {
+			if ( $was_truncated ) {
+				return new WP_Error(
+					'webscribeai_truncated',
+					__( 'The AI response was cut off before it could finish, likely because the model spent its token budget on internal reasoning. Try again, or switch to a different model in WebscribeAI settings.', 'webscribeai' )
+				);
+			}
+
 			return new WP_Error(
 				'webscribeai_parse_error',
 				__( 'The AI returned an unexpected response format. Please try again.', 'webscribeai' )
@@ -517,6 +539,61 @@ Page Content:
 			'title'       => sanitize_text_field( $data['title'] ),
 			'description' => sanitize_textarea_field( $data['description'] ),
 		];
+	}
+
+	/**
+	 * Isolate the JSON object from raw AI text.
+	 *
+	 * Models are told to respond with JSON only, but sometimes wrap it in a
+	 * markdown code fence or add stray commentary before/after it anyway —
+	 * this locates the outermost {...} rather than assuming the whole string
+	 * is valid JSON on its own.
+	 *
+	 * @param string $text Raw AI response text.
+	 * @return string|null
+	 */
+	private function extract_json_object( string $text ): ?string {
+		$text = preg_replace( '/^```(?:json)?\s*/i', '', trim( $text ) );
+		$text = trim( preg_replace( '/\s*```$/', '', $text ) );
+
+		if ( '' === $text ) {
+			return null;
+		}
+
+		$start = strpos( $text, '{' );
+		$end   = strrpos( $text, '}' );
+
+		if ( false === $start || false === $end || $end < $start ) {
+			return null;
+		}
+
+		return substr( $text, $start, $end - $start + 1 );
+	}
+
+	/**
+	 * Decode a JSON object, retrying with low-risk cleanups if the first pass fails.
+	 *
+	 * Handles trailing commas and typographic quotes that smaller/faster
+	 * models occasionally substitute for straight ones.
+	 *
+	 * @param string $json JSON object string.
+	 * @return array|null
+	 */
+	private function decode_json_loose( string $json ): ?array {
+		$data = json_decode( $json, true );
+		if ( is_array( $data ) ) {
+			return $data;
+		}
+
+		$cleaned = preg_replace( '/,\s*([}\]])/', '$1', $json );
+		$cleaned = str_replace(
+			[ "\u{201C}", "\u{201D}", "\u{2018}", "\u{2019}" ],
+			[ '"', '"', "'", "'" ],
+			$cleaned
+		);
+		$data    = json_decode( $cleaned, true );
+
+		return is_array( $data ) ? $data : null;
 	}
 
 	/**

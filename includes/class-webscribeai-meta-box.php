@@ -67,9 +67,10 @@ class WebscribeAI_Meta_Box {
 			return;
 		}
 
-		$settings    = (array) get_option( 'webscribeai_settings', [] );
-		$override    = ! empty( $settings['override_existing'] );
-		$has_api_key = ! empty( $settings['api_key'] );
+		$settings      = (array) get_option( 'webscribeai_settings', [] );
+		$override      = ! empty( $settings['override_existing'] );
+		$has_api_key   = ! empty( $settings['api_key'] );
+		$limit_reached = ! WebscribeAI_Usage::has_remaining();
 		?>
 		<div class="misc-pub-section webscribeai-sidebar-action" id="webscribeai-sidebar-<?php echo esc_attr( $post_id ); ?>">
 			<strong><?php esc_html_e( 'WebscribeAI', 'webscribeai' ); ?></strong>
@@ -88,13 +89,23 @@ class WebscribeAI_Meta_Box {
 					);
 					?>
 				</p>
+			<?php elseif ( $limit_reached ) : ?>
+				<p class="webscribeai-notice webscribeai-notice--warning">
+					<?php
+					printf(
+						/* translators: %d: monthly generation limit */
+						esc_html__( 'Monthly AI generation limit reached (%d). Resets on the 1st of next month.', 'webscribeai' ),
+						(int) WebscribeAI_Usage::get_limit()
+					);
+					?>
+				</p>
 			<?php endif; ?>
 
 			<button
 				type="button"
 				class="button button-secondary webscribeai-sidebar-generate-btn"
 				data-post-id="<?php echo esc_attr( $post_id ); ?>"
-				<?php disabled( ! $has_api_key ); ?>
+				<?php disabled( ! $has_api_key || $limit_reached ); ?>
 			>
 				<?php esc_html_e( 'Generate SEO Meta', 'webscribeai' ); ?>
 			</button>
@@ -157,10 +168,11 @@ class WebscribeAI_Meta_Box {
 	 * @param WP_Post $post Current post object.
 	 */
 	public function render_meta_box( WP_Post $post ): void {
-		$existing   = WebscribeAI_SEO::get_meta( $post->ID );
-		$settings   = (array) get_option( 'webscribeai_settings', [] );
-		$override   = ! empty( $settings['override_existing'] );
-		$has_api_key = ! empty( $settings['api_key'] );
+		$existing      = WebscribeAI_SEO::get_meta( $post->ID );
+		$settings      = (array) get_option( 'webscribeai_settings', [] );
+		$override      = ! empty( $settings['override_existing'] );
+		$has_api_key   = ! empty( $settings['api_key'] );
+		$limit_reached = ! WebscribeAI_Usage::has_remaining();
 
 		wp_nonce_field( 'webscribeai_meta_box', 'webscribeai_nonce' );
 		?>
@@ -177,6 +189,16 @@ class WebscribeAI_Meta_Box {
 							esc_url( admin_url( 'options-general.php?page=webscribeai' ) ),
 							esc_html__( 'WebscribeAI Settings', 'webscribeai' )
 						)
+					);
+					?>
+				</p>
+			<?php elseif ( $limit_reached ) : ?>
+				<p class="webscribeai-notice webscribeai-notice--warning">
+					<?php
+					printf(
+						/* translators: %d: monthly generation limit */
+						esc_html__( 'Monthly AI generation limit reached (%d). Resets on the 1st of next month.', 'webscribeai' ),
+						(int) WebscribeAI_Usage::get_limit()
 					);
 					?>
 				</p>
@@ -212,7 +234,7 @@ class WebscribeAI_Meta_Box {
 					type="button"
 					class="button button-primary webscribeai-generate-btn"
 					data-post-id="<?php echo esc_attr( $post->ID ); ?>"
-					<?php disabled( ! $has_api_key ); ?>
+					<?php disabled( ! $has_api_key || $limit_reached ); ?>
 				>
 					<?php esc_html_e( 'Generate SEO Meta', 'webscribeai' ); ?>
 				</button>

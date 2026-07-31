@@ -162,6 +162,37 @@
     word-break: break-word;
 }
 
+.webscribeai-meta-text {
+    display: block;
+}
+
+/* SEO length validity bar */
+.webscribeai-vbar {
+    height: 5px;
+    border-radius: 2px;
+    background: #e4e4e6;
+    overflow: hidden;
+}
+
+.webscribeai-vbar-fill {
+    height: 100%;
+    border-radius: 2px;
+}
+
+.webscribeai-vbar.is-empty { opacity: 0.6; }
+.webscribeai-vbar.is-good .webscribeai-vbar-fill { background: #4cc252; }
+.webscribeai-vbar.is-warn .webscribeai-vbar-fill { background: #ea8d4a; }
+.webscribeai-vbar.is-bad  .webscribeai-vbar-fill { background: #b71c1c; }
+
+.webscribeai-meta-text + .webscribeai-vbar {
+    margin-top: 20px;
+}
+
+.webscribeai-edit-title + .webscribeai-vbar,
+.webscribeai-edit-desc + .webscribeai-vbar {
+    margin-top: 6px;
+}
+
 .webscribeai-cell-result {
     font-size: 12px;
     font-weight: 600;
@@ -280,6 +311,102 @@ tr.webscribeai-errored {
     font-size: 18px;
     width: 18px;
     height: 18px;
+}
+
+/* ---- Completion modal ---- */
+
+.webscribeai-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.webscribeai-modal {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+    padding: 32px 36px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+}
+
+.webscribeai-modal-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #e6f4ea;
+    color: #2e7d32;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+}
+
+.webscribeai-modal-icon.is-warning {
+    background: #fdf2e3;
+    color: #b26a00;
+}
+
+.webscribeai-modal-icon .dashicons {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+}
+
+.webscribeai-modal-title {
+    margin: 0 0 18px;
+    font-size: 18px;
+}
+
+.webscribeai-modal-stats {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.webscribeai-modal-stat {
+    flex: 1 1 0;
+    min-width: 84px;
+    padding: 10px 8px;
+    border-radius: 6px;
+    background: #f6f7f7;
+}
+
+.webscribeai-modal-stat .webscribeai-modal-stat-num {
+    display: block;
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.webscribeai-modal-stat .webscribeai-modal-stat-label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+}
+
+.webscribeai-modal-stat.is-generated .webscribeai-modal-stat-num { color: #2e7d32; }
+.webscribeai-modal-stat.is-skipped .webscribeai-modal-stat-num   { color: #795548; }
+.webscribeai-modal-stat.is-errors .webscribeai-modal-stat-num    { color: #b71c1c; }
+
+.webscribeai-modal-note {
+    font-size: 12px;
+    color: #888;
+    margin: 0 0 20px;
+}
+
+#webscribeai-modal-ok-btn {
+    min-width: 120px;
 }
 
 /* ---- Pagination ---- */

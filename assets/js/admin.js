@@ -37,6 +37,50 @@
     // Bulk Populate tab
     // =========================================================================
 
+    // --- SEO length validity bar ---
+
+    var seoLimits = cfg.seoLimits || { title: 60, titleWarn: 70, description: 160, descriptionWarn: 180 };
+
+    function buildValidityBar( text, limit, warnLimit ) {
+        var length = text.length;
+        var $bar   = $( '<div>' ).addClass( 'webscribeai-vbar' );
+        var $fill  = $( '<div>' ).addClass( 'webscribeai-vbar-fill' );
+
+        if ( 0 === length ) {
+            return $bar.addClass( 'is-empty' ).append( $fill );
+        }
+
+        var state;
+        if ( length <= limit ) {
+            state = 'is-good';
+        } else if ( length <= warnLimit ) {
+            state = 'is-warn';
+        } else {
+            state = 'is-bad';
+        }
+
+        $fill.css( 'width', Math.min( 100, ( length / limit ) * 100 ) + '%' );
+        $bar.addClass( state ).attr( 'title', length + ' / ' + limit + ' ' + cfg.i18n.characters );
+
+        return $bar.append( $fill );
+    }
+
+    function renderMetaCell( $cell, text, limit, warnLimit ) {
+        var $text = $( '<span>' ).addClass( 'webscribeai-meta-text' ).text( text );
+        $cell.empty().append( $text, buildValidityBar( text, limit, warnLimit ) );
+    }
+
+    // Live update while typing in the inline editor.
+    $( document ).on( 'input', '.webscribeai-edit-title', function () {
+        $( this ).siblings( '.webscribeai-vbar' )
+            .replaceWith( buildValidityBar( $( this ).val(), seoLimits.title, seoLimits.titleWarn ) );
+    } );
+
+    $( document ).on( 'input', '.webscribeai-edit-desc', function () {
+        $( this ).siblings( '.webscribeai-vbar' )
+            .replaceWith( buildValidityBar( $( this ).val(), seoLimits.description, seoLimits.descriptionWarn ) );
+    } );
+
     // --- Select / Deselect All ---
 
     $( '#webscribeai-select-all' ).on( 'click', function () {
@@ -108,6 +152,32 @@
     $( document ).on( 'click', '#webscribeai-dismiss-resume-btn', function () {
         $( '#webscribeai-resume-notice' ).remove();
         clearQueue();
+    } );
+
+    // --- Last-run errors (flashed once after the completion modal reloads) ---
+
+    if ( cfg.lastErrors && Object.keys( cfg.lastErrors ).length > 0 ) {
+        var lastErrorIds = Object.keys( cfg.lastErrors );
+
+        lastErrorIds.forEach( function ( id ) {
+            setRowStatus( parseInt( id, 10 ), 'error', cfg.lastErrors[ id ] || cfg.i18n.error );
+        } );
+
+        var $lastErrorsNotice = $( '<div>' )
+            .attr( 'id', 'webscribeai-last-errors-notice' )
+            .addClass( 'notice notice-error' )
+            .css( 'padding', '8px 12px' )
+            .html(
+                '<p>' +
+                '<strong>' + lastErrorIds.length + ' ' + cfg.i18n.lastErrorsCount + '</strong>' +
+                ' &nbsp;<button type="button" class="button" id="webscribeai-dismiss-last-errors-btn">' + cfg.i18n.dismissBtn + '</button>' +
+                '</p>'
+            );
+        $( '.webscribeai-bulk-wrap' ).prepend( $lastErrorsNotice );
+    }
+
+    $( document ).on( 'click', '#webscribeai-dismiss-last-errors-btn', function () {
+        $( '#webscribeai-last-errors-notice' ).remove();
     } );
 
     // --- Generate All ---
@@ -202,6 +272,7 @@
     // -------------------------------------------------------------------------
 
     var bulkStopRequested = false;
+    var limitReachedMessage = '';
 
     $( '#webscribeai-stop-btn' ).on( 'click', function () {
         bulkStopRequested = true;
@@ -211,11 +282,14 @@
     function runBulk( postIds, override, field ) {
         field = field || 'both';
 
-        var total     = postIds.length;
-        var done      = 0;
-        var succeeded = 0;
-        var skipped   = 0;
-        var failed    = 0;
+        limitReachedMessage = '';
+
+        var total         = postIds.length;
+        var done          = 0;
+        var succeeded     = 0;
+        var skipped       = 0;
+        var failed        = 0;
+        var failedEntries = [];
 
         var $applyBtn  = $( '#webscribeai-bulk-apply' );
         var $runAllBtn = $( '#webscribeai-bulk-run-all' );
@@ -271,7 +345,16 @@
 
                 if ( ! response.success ) {
                     failed++;
-                    setRowStatus( postId, 'error', cfg.i18n.error + ': ' + ( response.data.message || '' ) );
+                    var errMessage = response.data.message || '';
+                    setRowStatus( postId, 'error', cfg.i18n.error + ': ' + errMessage );
+                    failedEntries.push( { post_id: postId, message: errMessage } );
+
+                    if ( response.data.limit_reached ) {
+                        // Retrying the rest would just hit the same monthly cap —
+                        // stop the loop instead of burning through every remaining row.
+                        bulkStopRequested = true;
+                        limitReachedMessage = response.data.message;
+                    }
                 } else if ( 'skipped' === response.data.status ) {
                     skipped++;
                     setRowStatus( postId, 'skipped', cfg.i18n.skipped );
@@ -288,6 +371,7 @@
                 done++;
                 failed++;
                 setRowStatus( postId, 'error', cfg.i18n.error );
+                failedEntries.push( { post_id: postId, message: cfg.i18n.error } );
                 updateProgress( done, total, $fill, $label );
             } )
             .always( function () {
@@ -300,6 +384,7 @@
 
         function onComplete() {
             clearQueue();
+            saveErrors( failedEntries );
             $stopBtn.hide();
             $applyBtn.prop( 'disabled', false );
             $runAllBtn.prop( 'disabled', false );
@@ -311,10 +396,12 @@
                     failed   + ' ' + cfg.i18n.error
                 )
                 .show();
+            showCompletionModal( cfg.i18n.bulkComplete, succeeded, skipped, failed );
         }
 
         function onStop( remainingIds ) {
             clearQueue();
+            saveErrors( failedEntries );
             bulkStopRequested = false;
             $stopBtn.hide();
             $applyBtn.prop( 'disabled', false );
@@ -325,14 +412,21 @@
                 $( '#webscribeai-result-' + id ).removeClass( 'is-success is-skipped is-error is-processing' ).text( '' );
             } );
 
+            var stopTitle = limitReachedMessage || cfg.i18n.bulkStopped;
             $results
                 .html(
-                    '<strong>' + cfg.i18n.bulkStopped + '</strong> &mdash; ' +
+                    '<strong>' + stopTitle + '</strong> &mdash; ' +
                     succeeded + ' ' + cfg.i18n.success + ', ' +
                     skipped  + ' ' + cfg.i18n.skipped  + ', ' +
                     failed   + ' ' + cfg.i18n.error
                 )
                 .show();
+
+            // Only pop the modal if any work actually happened — otherwise an
+            // immediate Stop click would force a pointless reload.
+            if ( succeeded > 0 || skipped > 0 || failed > 0 ) {
+                showCompletionModal( stopTitle, succeeded, skipped, failed );
+            }
         }
 
         processNext( 0 );
@@ -456,6 +550,45 @@
     }
 
     // -------------------------------------------------------------------------
+    // Completion modal — summarizes a finished bulk generation run. Reloads
+    // the page on dismiss so the "AI generations used this month" count
+    // (rendered server-side) reflects what was just generated.
+    // -------------------------------------------------------------------------
+
+    function buildModalStat( num, label, cssClass ) {
+        return $( '<div>' ).addClass( 'webscribeai-modal-stat ' + cssClass ).append(
+            $( '<span>' ).addClass( 'webscribeai-modal-stat-num' ).text( num ),
+            $( '<span>' ).addClass( 'webscribeai-modal-stat-label' ).text( label )
+        );
+    }
+
+    function showCompletionModal( title, succeeded, skipped, failed ) {
+        var hasErrors = failed > 0;
+
+        $( '#webscribeai-modal-icon' )
+            .toggleClass( 'is-warning', hasErrors )
+            .html( '<span class="dashicons ' + ( hasErrors ? 'dashicons-warning' : 'dashicons-yes-alt' ) + '"></span>' );
+
+        $( '#webscribeai-modal-title' ).text( title );
+
+        $( '#webscribeai-modal-stats' ).empty().append(
+            buildModalStat( succeeded, cfg.i18n.modalGenerated, 'is-generated' ),
+            buildModalStat( skipped, cfg.i18n.modalSkipped, 'is-skipped' ),
+            buildModalStat( failed, cfg.i18n.modalErrors, 'is-errors' )
+        );
+
+        var note = hasErrors ? cfg.i18n.modalRefreshNote + ' ' + cfg.i18n.modalErrorsNote : cfg.i18n.modalRefreshNote;
+        $( '#webscribeai-modal-note' ).text( note );
+        $( '#webscribeai-modal-ok-btn' ).text( cfg.i18n.modalOk );
+
+        $( '#webscribeai-bulk-modal-overlay' ).show();
+    }
+
+    $( document ).on( 'click', '#webscribeai-modal-ok-btn', function () {
+        window.location.reload();
+    } );
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
@@ -515,17 +648,32 @@
         } );
     }
 
+    // Persists the failed rows from this run (or clears the stored list if
+    // none failed) so they can be re-highlighted once after the completion
+    // modal's reload. See cfg.lastErrors handling near the top of this file.
+    function saveErrors( entries ) {
+        $.ajax( {
+            url:    cfg.ajaxUrl,
+            method: 'POST',
+            data:   {
+                action: 'webscribeai_save_errors',
+                nonce:  cfg.nonce,
+                errors: entries,
+            },
+        } );
+    }
+
     function updateRowMeta( postId, field, title, description ) {
         var $row = $( '#webscribeai-row-' + postId );
 
         // title/description come back null when that field was left untouched
         // (already had a value and override wasn't requested) — don't blank the cell.
         if ( ( 'title' === field || 'both' === field ) && null !== title ) {
-            $row.find( '.webscribeai-cell-title' ).html( $( '<span>' ).addClass( 'webscribeai-meta-text' ).text( title ) );
+            renderMetaCell( $row.find( '.webscribeai-cell-title' ), title, seoLimits.title, seoLimits.titleWarn );
         }
 
         if ( ( 'description' === field || 'both' === field ) && null !== description ) {
-            $row.find( '.webscribeai-cell-desc' ).html( $( '<span>' ).addClass( 'webscribeai-meta-text' ).text( description ) );
+            renderMetaCell( $row.find( '.webscribeai-cell-desc' ), description, seoLimits.description, seoLimits.descriptionWarn );
         }
 
         // Show edit button if not already in edit mode.
@@ -541,11 +689,11 @@
         var $row = $( '#webscribeai-row-' + postId );
 
         if ( 'title' === field || 'all' === field ) {
-            $row.find( '.webscribeai-cell-title' ).html( $( '<span>' ).addClass( 'webscribeai-meta-text' ).text( '' ) );
+            renderMetaCell( $row.find( '.webscribeai-cell-title' ), '', seoLimits.title, seoLimits.titleWarn );
         }
 
         if ( 'description' === field || 'all' === field ) {
-            $row.find( '.webscribeai-cell-desc' ).html( $( '<span>' ).addClass( 'webscribeai-meta-text' ).text( '' ) );
+            renderMetaCell( $row.find( '.webscribeai-cell-desc' ), '', seoLimits.description, seoLimits.descriptionWarn );
         }
     }
 
@@ -565,8 +713,8 @@
     function exitEditMode( $row, title, desc ) {
         var postId = $row.attr( 'id' ).replace( 'webscribeai-row-', '' );
         $row.removeClass( 'webscribeai-editing' );
-        $row.find( '.webscribeai-cell-title' ).html( $( '<span>' ).addClass( 'webscribeai-meta-text' ).text( title ) );
-        $row.find( '.webscribeai-cell-desc' ).html( $( '<span>' ).addClass( 'webscribeai-meta-text' ).text( desc ) );
+        renderMetaCell( $row.find( '.webscribeai-cell-title' ), title, seoLimits.title, seoLimits.titleWarn );
+        renderMetaCell( $row.find( '.webscribeai-cell-desc' ), desc, seoLimits.description, seoLimits.descriptionWarn );
         $row.find( '.webscribeai-cell-actions' ).html( makeEditBtn( postId ) );
     }
 
@@ -585,11 +733,11 @@
         $row.data( { 'orig-title': origTitle, 'orig-desc': origDesc } ).addClass( 'webscribeai-editing' );
 
         $row.find( '.webscribeai-cell-title' ).html(
-            $( '<input>' ).attr( { type: 'text', class: 'webscribeai-edit-title widefat', maxlength: 70 } ).val( origTitle )
-        );
+            $( '<input>' ).attr( { type: 'text', class: 'webscribeai-edit-title widefat', maxlength: 100 } ).val( origTitle )
+        ).append( buildValidityBar( origTitle, seoLimits.title, seoLimits.titleWarn ) );
         $row.find( '.webscribeai-cell-desc' ).html(
-            $( '<textarea>' ).attr( { class: 'webscribeai-edit-desc widefat', rows: 2, maxlength: 200 } ).val( origDesc )
-        );
+            $( '<textarea>' ).attr( { class: 'webscribeai-edit-desc widefat', rows: 2, maxlength: 250 } ).val( origDesc )
+        ).append( buildValidityBar( origDesc, seoLimits.description, seoLimits.descriptionWarn ) );
         $row.find( '.webscribeai-cell-actions' ).html(
             $( '<div>' ).addClass( 'webscribeai-edit-actions' )
                 .append( $( '<button>' ).attr( { type: 'button', class: 'button-link webscribeai-save-btn', 'data-post-id': postId, title: cfg.i18n.save } ).html( '<span class="dashicons dashicons-yes-alt"></span>' ) )

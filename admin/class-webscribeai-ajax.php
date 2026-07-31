@@ -31,6 +31,10 @@ class WebscribeAI_Ajax {
 		// Persist / clear the resumable bulk queue.
 		add_action( 'wp_ajax_webscribeai_save_queue',  [ $this, 'handle_save_queue' ] );
 		add_action( 'wp_ajax_webscribeai_clear_queue', [ $this, 'handle_clear_queue' ] );
+
+		// Persist the errors from the last bulk generation run, so they can
+		// be displayed once more after the completion modal reloads the page.
+		add_action( 'wp_ajax_webscribeai_save_errors', [ $this, 'handle_save_errors' ] );
 	}
 
 	// -------------------------------------------------------------------------
@@ -167,8 +171,9 @@ class WebscribeAI_Ajax {
 
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( [
-				'post_id' => $post_id,
-				'message' => $result->get_error_message(),
+				'post_id'       => $post_id,
+				'message'       => $result->get_error_message(),
+				'limit_reached' => 'webscribeai_limit_reached' === $result->get_error_code(),
 			] );
 		}
 
@@ -276,6 +281,49 @@ class WebscribeAI_Ajax {
 		}
 
 		delete_option( 'webscribeai_bulk_queue' );
+
+		wp_send_json_success();
+	}
+
+	/**
+	 * Persist the failed rows from a just-finished bulk generation run.
+	 *
+	 * Read once (and cleared) on the next page load so the failed rows can be
+	 * re-highlighted after the completion modal's reload — see
+	 * WebscribeAI_Admin::enqueue_assets(). An empty list clears any
+	 * previously stored errors.
+	 */
+	public function handle_save_errors(): void {
+		$this->verify_nonce();
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => __( 'Permission denied.', 'webscribeai' ) ] );
+		}
+
+		$raw_errors = isset( $_POST['errors'] ) ? (array) wp_unslash( $_POST['errors'] ) : [];
+		$errors     = [];
+
+		foreach ( $raw_errors as $entry ) {
+			$post_id = isset( $entry['post_id'] ) ? absint( $entry['post_id'] ) : 0;
+			$message = isset( $entry['message'] ) ? sanitize_text_field( $entry['message'] ) : '';
+
+			if ( $post_id ) {
+				$errors[ $post_id ] = $message;
+			}
+		}
+
+		if ( empty( $errors ) ) {
+			delete_option( 'webscribeai_bulk_errors' );
+		} else {
+			update_option(
+				'webscribeai_bulk_errors',
+				[
+					'errors'   => $errors,
+					'saved_at' => time(),
+				],
+				false // not autoloaded
+			);
+		}
 
 		wp_send_json_success();
 	}

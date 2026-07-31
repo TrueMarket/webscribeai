@@ -18,6 +18,14 @@ class WebscribeAI_Admin {
 	const OPTION_NAME = 'webscribeai_settings';
 
 	/**
+	 * SEO title/description length guidelines used by the bulk populate validity bar.
+	 */
+	const SEO_TITLE_LIMIT      = 60;
+	const SEO_TITLE_WARN_LIMIT = 70;
+	const SEO_DESC_LIMIT       = 160;
+	const SEO_DESC_WARN_LIMIT  = 180;
+
+	/**
 	 * Constructor — register hooks.
 	 */
 	public function __construct() {
@@ -196,12 +204,36 @@ class WebscribeAI_Admin {
 			</nav>
 
 			<div class="webscribeai-tab-content">
+				<?php $this->render_usage_summary(); ?>
 				<?php if ( 'settings' === $active_tab ) : ?>
 					<?php $this->render_settings_tab(); ?>
 				<?php else : ?>
 					<?php $this->render_bulk_tab(); ?>
 				<?php endif; ?>
 			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the current month's usage against the monthly generation cap.
+	 */
+	private function render_usage_summary(): void {
+		$count = WebscribeAI_Usage::get_count();
+		$limit = WebscribeAI_Usage::get_limit();
+		$class = $count >= $limit ? 'notice-warning' : 'notice-info';
+		?>
+		<div class="notice <?php echo esc_attr( $class ); ?> inline webscribeai-usage-summary">
+			<p>
+				<?php
+				printf(
+					/* translators: 1: generations used this month, 2: monthly limit */
+					esc_html__( 'AI generations used this month: %1$d / %2$d. Resets on the 1st of next month.', 'webscribeai' ),
+					(int) $count,
+					(int) $limit
+				);
+				?>
+			</p>
 		</div>
 		<?php
 	}
@@ -225,10 +257,12 @@ class WebscribeAI_Admin {
 	 * Render the Bulk Populate tab.
 	 */
 	private function render_bulk_tab(): void {
-		$settings    = (array) get_option( self::OPTION_NAME, [] );
-		$has_api_key = ! empty( $settings['api_key'] );
-		$post_types  = $this->get_bulk_post_types();
-		$all_posts   = $this->get_all_posts_grouped( $post_types );
+		$settings      = (array) get_option( self::OPTION_NAME, [] );
+		$has_api_key   = ! empty( $settings['api_key'] );
+		$limit_reached = ! WebscribeAI_Usage::has_remaining();
+		$can_generate  = $has_api_key && ! $limit_reached;
+		$post_types    = $this->get_bulk_post_types();
+		$all_posts     = $this->get_all_posts_grouped( $post_types );
 		?>
 		<div class="webscribeai-bulk-wrap">
 
@@ -241,6 +275,18 @@ class WebscribeAI_Admin {
 							esc_html__( 'Please configure your API key in the %s tab before running a bulk populate.', 'webscribeai' ),
 							'<a href="' . esc_url( admin_url( 'tools.php?page=webscribeai&tab=settings' ) ) . '">'
 							. esc_html__( 'Settings', 'webscribeai' ) . '</a>'
+						);
+						?>
+					</p>
+				</div>
+			<?php elseif ( $limit_reached ) : ?>
+				<div class="notice notice-warning">
+					<p>
+						<?php
+						printf(
+							/* translators: %d: monthly generation limit */
+							esc_html__( 'Monthly AI generation limit reached (%d). Bulk generation is unavailable until the limit resets on the 1st of next month.', 'webscribeai' ),
+							(int) WebscribeAI_Usage::get_limit()
 						);
 						?>
 					</p>
@@ -274,13 +320,13 @@ class WebscribeAI_Admin {
 					</label>
 					<select id="webscribeai-bulk-action-select">
 						<option value=""><?php esc_html_e( 'Bulk actions', 'webscribeai' ); ?></option>
-						<option value="generate_meta" <?php selected( $has_api_key ); ?> <?php disabled( ! $has_api_key ); ?>>
+						<option value="generate_meta" <?php selected( $can_generate ); ?> <?php disabled( ! $can_generate ); ?>>
 							<?php esc_html_e( 'Generate SEO Meta (Title + Description)', 'webscribeai' ); ?>
 						</option>
-						<option value="generate_title" <?php disabled( ! $has_api_key ); ?>>
+						<option value="generate_title" <?php disabled( ! $can_generate ); ?>>
 							<?php esc_html_e( 'Generate SEO Title', 'webscribeai' ); ?>
 						</option>
-						<option value="generate_description" <?php disabled( ! $has_api_key ); ?>>
+						<option value="generate_description" <?php disabled( ! $can_generate ); ?>>
 							<?php esc_html_e( 'Generate SEO Description', 'webscribeai' ); ?>
 						</option>
 						<option value="remove_title">
@@ -302,7 +348,7 @@ class WebscribeAI_Admin {
 					type="button"
 					class="button"
 					id="webscribeai-bulk-run-all"
-					<?php disabled( ! $has_api_key ); ?>
+					<?php disabled( ! $can_generate ); ?>
 				>
 					<?php esc_html_e( 'Generate All', 'webscribeai' ); ?>
 				</button>
@@ -319,6 +365,16 @@ class WebscribeAI_Admin {
 			</div>
 
 			<div id="webscribeai-bulk-results" style="display:none;"></div>
+
+			<div id="webscribeai-bulk-modal-overlay" class="webscribeai-modal-overlay" style="display:none;">
+				<div class="webscribeai-modal" role="dialog" aria-modal="true" aria-labelledby="webscribeai-modal-title">
+					<div class="webscribeai-modal-icon" id="webscribeai-modal-icon" aria-hidden="true"></div>
+					<h2 class="webscribeai-modal-title" id="webscribeai-modal-title"></h2>
+					<div class="webscribeai-modal-stats" id="webscribeai-modal-stats"></div>
+					<p class="webscribeai-modal-note" id="webscribeai-modal-note"></p>
+					<button type="button" class="button button-primary button-hero" id="webscribeai-modal-ok-btn"></button>
+				</div>
+			</div>
 
 			<?php if ( empty( $all_posts ) ) : ?>
 				<p><?php esc_html_e( 'No posts or pages found.', 'webscribeai' ); ?></p>
@@ -386,9 +442,11 @@ class WebscribeAI_Admin {
 											<td><?php echo esc_html( get_post_status_object( $post->post_status )->label ?? $post->post_status ); ?></td>
 											<td class="webscribeai-cell-title">
 												<span class="webscribeai-meta-text"><?php echo esc_html( $existing['title'] ); ?></span>
+												<?php $this->render_validity_bar( $existing['title'], self::SEO_TITLE_LIMIT, self::SEO_TITLE_WARN_LIMIT ); ?>
 											</td>
 											<td class="webscribeai-cell-desc">
 												<span class="webscribeai-meta-text"><?php echo esc_html( $existing['description'] ); ?></span>
+												<?php $this->render_validity_bar( $existing['description'], self::SEO_DESC_LIMIT, self::SEO_DESC_WARN_LIMIT ); ?>
 											</td>
 											<td class="webscribeai-cell-result" id="webscribeai-result-<?php echo esc_attr( $post->ID ); ?>"></td>
 											<td class="webscribeai-cell-actions">
@@ -409,6 +467,41 @@ class WebscribeAI_Admin {
 			<?php endif; ?>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Output a small colour-coded bar showing how a title/description length
+	 * compares to the recommended SEO character limit.
+	 */
+	private function render_validity_bar( string $text, int $limit, int $warn_limit ): void {
+		$length = mb_strlen( $text );
+
+		if ( 0 === $length ) {
+			echo '<div class="webscribeai-vbar is-empty"><div class="webscribeai-vbar-fill"></div></div>';
+			return;
+		}
+
+		if ( $length <= $limit ) {
+			$state = 'is-good';
+		} elseif ( $length <= $warn_limit ) {
+			$state = 'is-warn';
+		} else {
+			$state = 'is-bad';
+		}
+
+		printf(
+			'<div class="webscribeai-vbar %1$s" title="%2$s"><div class="webscribeai-vbar-fill" style="width:%3$s%%"></div></div>',
+			esc_attr( $state ),
+			esc_attr(
+				sprintf(
+					/* translators: 1: current character count, 2: recommended character limit */
+					__( '%1$d / %2$d characters', 'webscribeai' ),
+					$length,
+					$limit
+				)
+			),
+			esc_attr( (string) min( 100, round( $length / $limit * 100, 2 ) ) )
+		);
 	}
 
 	// -------------------------------------------------------------------------
@@ -716,6 +809,16 @@ class WebscribeAI_Admin {
 			];
 		}
 
+		// Flash-read the errors from the last bulk run: shown once on this
+		// load, then discarded, so a later unrelated page load doesn't keep
+		// resurfacing a stale failure list.
+		$saved_errors     = get_option( 'webscribeai_bulk_errors', null );
+		$last_errors_cfg  = null;
+		if ( is_array( $saved_errors ) && ! empty( $saved_errors['errors'] ) ) {
+			$last_errors_cfg = $saved_errors['errors']; // post_id => error message.
+			delete_option( 'webscribeai_bulk_errors' );
+		}
+
 		wp_localize_script(
 			'webscribeai-admin',
 			'webscribeaiAdmin',
@@ -724,7 +827,14 @@ class WebscribeAI_Admin {
 				'nonce'      => wp_create_nonce( 'webscribeai_ajax' ),
 				'models'     => WebscribeAI_API::get_available_models(),
 				'savedQueue' => $saved_queue_cfg,
+				'lastErrors' => $last_errors_cfg,
 				'hasApiKey'  => $has_api_key,
+				'seoLimits'  => [
+					'title'           => self::SEO_TITLE_LIMIT,
+					'titleWarn'       => self::SEO_TITLE_WARN_LIMIT,
+					'description'     => self::SEO_DESC_LIMIT,
+					'descriptionWarn' => self::SEO_DESC_WARN_LIMIT,
+				],
 				'i18n'       => [
 					'processing'    => __( 'Processing…', 'webscribeai' ),
 					'done'          => __( 'Done', 'webscribeai' ),
@@ -757,6 +867,14 @@ class WebscribeAI_Admin {
 					'bulkStopped'   => __( 'Bulk generation stopped.', 'webscribeai' ),
 					'pagePrev'      => __( 'Prev', 'webscribeai' ),
 					'pageNext'      => __( 'Next', 'webscribeai' ),
+					'characters'    => __( 'characters', 'webscribeai' ),
+					'modalGenerated'    => __( 'Generated', 'webscribeai' ),
+					'modalSkipped'      => __( 'Skipped', 'webscribeai' ),
+					'modalErrors'       => __( 'Errors', 'webscribeai' ),
+					'modalOk'           => __( 'OK', 'webscribeai' ),
+					'modalRefreshNote'  => __( 'The page will refresh to update this month\'s usage count.', 'webscribeai' ),
+					'modalErrorsNote'   => __( 'Rows that failed will stay highlighted below so you can find and retry them.', 'webscribeai' ),
+					'lastErrorsCount'   => __( 'posts failed to generate on your last run. The affected rows are highlighted below.', 'webscribeai' ),
 				],
 				'perPage'    => 20,
 			]

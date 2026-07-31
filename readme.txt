@@ -4,7 +4,7 @@ Tags: seo, meta, ai
 Requires at least: 6.0
 Tested up to: 7.0.2
 Requires PHP: 8.0
-Stable tag: 0.2.1
+Stable tag: 0.2.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,6 +78,12 @@ Currently only The SEO Framework is natively supported. Yoast SEO and Rank Math 
 Updates are served from the plugin's public GitHub repository. When a new release or tag is published there with a higher version number, WordPress will offer the update on the Plugins screen.
 
 == Changelog ==
+
+= 0.2.2 =
+* Added monthly 500 generation cap, resetting on the 1st of every month.
+* Added validity analyzer in bulk populate tab.
+* Tightened AI prompt to stick closer to 60 characters for titles and 160 for descriptions.
+* Added confirmation modal after bulk generation.
 
 = 0.2.1 =
 * Encrypt API key.
