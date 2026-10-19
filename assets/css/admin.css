@@ -19,6 +19,11 @@
     margin-top: 20px;
 }
 
+/* WP's .button sets display, which would otherwise override [hidden]. */
+.webscribeai-bulk-wrap [hidden] {
+    display: none !important;
+}
+
 .webscribeai-bulk-options {
     background: #fff;
     border: 1px solid #e0e0e0;
@@ -28,12 +33,260 @@
     max-width: 640px;
 }
 
-.webscribeai-bulk-select-bar {
+/* Run panel — sticks below the admin bar while a job runs */
+
+.webscribeai-run-panel {
+    position: sticky;
+    top: 32px;
+    z-index: 20;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-left: 4px solid #2271b1;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 12px 16px;
+    margin-bottom: 16px;
+}
+
+@media screen and (max-width: 782px) {
+    .webscribeai-run-panel { top: 46px; }
+}
+
+@media screen and (max-width: 600px) {
+    .webscribeai-run-panel { top: 0; }
+}
+
+.webscribeai-run-panel.is-finished {
+    border-left-color: #43a047;
+}
+
+.webscribeai-run-panel.is-finished.is-warning {
+    border-left-color: #dba617;
+}
+
+.webscribeai-run-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.webscribeai-run-title {
+    font-size: 14px;
+}
+
+.webscribeai-run-counter {
+    color: #646970;
+    font-variant-numeric: tabular-nums;
+}
+
+.webscribeai-run-spacer {
+    flex: 1;
+}
+
+.webscribeai-run-close {
+    color: #646970;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.webscribeai-run-close:hover {
+    color: #1d2327;
+}
+
+.webscribeai-run-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 16px;
+    font-size: 12px;
+    color: #50575e;
+}
+
+.webscribeai-run-current {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.webscribeai-run-stats {
+    font-variant-numeric: tabular-nums;
+}
+
+.webscribeai-run-feed {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 8px 0 0;
+    border-top: 1px solid #f0f0f1;
+    font-size: 12px;
+}
+
+.webscribeai-run-feed:empty {
+    display: none;
+}
+
+.webscribeai-run-feed li {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin: 0 0 3px;
+    min-width: 0;
+}
+
+.webscribeai-run-feed li:not(:first-child) {
+    opacity: 0.7;
+}
+
+.webscribeai-run-feed .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    align-self: center;
+    flex: none;
+}
+
+.webscribeai-run-feed .is-success .dashicons { color: #2e7d32; }
+.webscribeai-run-feed .is-skipped .dashicons { color: #795548; }
+.webscribeai-run-feed .is-error .dashicons   { color: #b71c1c; }
+
+.webscribeai-run-feed-post {
+    font-weight: 600;
+    flex: none;
+    max-width: 35%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.webscribeai-run-feed-detail {
+    color: #50575e;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.webscribeai-run-feed .is-error .webscribeai-run-feed-detail {
+    color: #b71c1c;
+}
+
+/* Progress bar */
+
+.webscribeai-progress-bar-wrap {
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.webscribeai-progress-bar {
+    height: 100%;
+    background: #2271b1;
+    border-radius: 4px;
+    width: 0;
+    transition: width 0.3s ease;
+}
+
+.webscribeai-run-panel.is-finished .webscribeai-progress-bar {
+    background: #43a047;
+}
+
+.webscribeai-run-panel.is-finished.is-warning .webscribeai-progress-bar {
+    background: #dba617;
+}
+
+/* Browse bar: views + filters */
+
+.webscribeai-browse-bar,
+.webscribeai-job-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-bottom: 10px;
+}
+
+.webscribeai-views {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0;
+    font-size: 13px;
+    color: #646970;
+}
+
+.webscribeai-views li {
+    margin: 0;
+}
+
+.webscribeai-views li + li::before {
+    content: '|';
+    padding: 0 6px;
+    color: #a7aaad;
+}
+
+.webscribeai-views a {
+    text-decoration: none;
+}
+
+.webscribeai-views a.current {
+    color: #1d2327;
+    font-weight: 600;
+}
+
+.webscribeai-views .count {
+    color: #646970;
+    font-weight: normal;
+}
+
+.webscribeai-filters {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#webscribeai-filter-search {
+    min-width: 200px;
+}
+
+/* Job bar — replaces the browse bar while viewing a job's rows */
+
+.webscribeai-job-bar {
+    justify-content: flex-start;
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    padding: 8px 12px;
+}
+
+.webscribeai-job-label {
+    font-weight: 600;
+}
+
+.webscribeai-job-filters {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.webscribeai-job-filters .button.is-active {
+    background: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
+}
+
+#webscribeai-job-exit {
+    margin-left: auto;
+}
+
+/* Actions bar: bulk actions, selection count, pagination */
+
+.webscribeai-actions-bar {
     display: flex;
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
-    margin-bottom: 18px;
+    margin-bottom: 8px;
 }
 
 .webscribeai-bulk-actions-group {
@@ -44,6 +297,11 @@
 
 #webscribeai-bulk-action-select {
     min-height: 30px;
+}
+
+.webscribeai-selected-count {
+    color: #646970;
+    font-size: 13px;
 }
 
 #webscribeai-bulk-run-all {
@@ -72,87 +330,69 @@
     cursor: default;
 }
 
-/* Progress bar */
-
-.webscribeai-progress-bar-wrap {
-    height: 16px;
-    background: #e0e0e0;
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 8px;
-    max-width: 640px;
+#webscribeai-pagination-top {
+    margin: 0 0 0 auto;
 }
 
-.webscribeai-progress-bar {
-    height: 100%;
-    background: #2271b1;
-    border-radius: 8px;
-    width: 0;
-    transition: width 0.3s ease;
-}
+/* "Select all N matching" banner */
 
-#webscribeai-progress-label {
-    font-size: 13px;
-    color: #555;
-}
-
-#webscribeai-bulk-results {
-    padding: 10px 14px;
-    background: #f0f8f0;
-    border-left: 4px solid #43a047;
+.webscribeai-select-banner {
+    background: #f0f6fc;
+    border: 1px solid #c5d9ed;
     border-radius: 4px;
-    max-width: 640px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    text-align: center;
     font-size: 13px;
-    margin-bottom: 18px;
 }
 
-/* Post list */
-
-.webscribeai-post-list {
-    margin-top: 10px;
+.webscribeai-select-banner .button-link {
+    font-weight: 600;
 }
 
-.webscribeai-post-list .check-column {
+.webscribeai-bulk-wrap.is-running .webscribeai-views a {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+/* Post table */
+
+.webscribeai-post-table .check-column {
     width: 2.2em;
     padding: 8px 10px !important;
     text-align: center;
     vertical-align: top;
 }
 
-.webscribeai-post-list thead .check-column input[type="checkbox"] {
+.webscribeai-post-table thead .check-column input[type="checkbox"] {
     margin: 0;
     vertical-align: middle;
 }
 
-.webscribeai-post-group {
-    margin-bottom: 30px;
+.webscribeai-post-table tbody {
+    transition: opacity 0.15s;
 }
 
-.webscribeai-post-group-title {
-    margin: 0 0 6px;
-    font-size: 14px;
+.webscribeai-post-table tbody.is-loading {
+    opacity: 0.5;
+    pointer-events: none;
 }
 
-.webscribeai-post-group-title {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+.webscribeai-empty-row td {
+    padding: 24px 10px !important;
+    text-align: center;
+    color: #646970;
 }
 
-.webscribeai-count {
-    color: #888;
-    font-weight: normal;
-    font-size: 12px;
-}
-
-/* Fixed column widths — keep all post-type tables aligned */
+/* Fixed column widths */
 .webscribeai-post-table { table-layout: fixed; width: 100%; }
-.webscribeai-post-table .col-check   { width: 2.2em; }
-.webscribeai-post-table .col-title   { width: 22%; }
-.webscribeai-post-table .col-status  { width: 8%; }
-.webscribeai-post-table .col-seo-title { width: 22%; }
+.webscribeai-post-table .col-check     { width: 2.2em; }
+.webscribeai-post-table .col-post      { width: 20%; }
+.webscribeai-post-table .col-type      { width: 7%; }
+.webscribeai-post-table .col-status    { width: 7%; }
+.webscribeai-post-table .col-seo-title { width: 21%; }
 .webscribeai-post-table .col-seo-desc  { width: auto; }
-.webscribeai-post-table .col-result  { width: 7%; }
+.webscribeai-post-table .col-result    { width: 9%; }
 
 .webscribeai-cell-title,
 .webscribeai-cell-desc {
@@ -203,10 +443,40 @@
 .webscribeai-cell-result.is-skipped { color: #795548; }
 .webscribeai-cell-result.is-error   { color: #b71c1c; white-space: normal; overflow-wrap: break-word; }
 .webscribeai-cell-result.is-processing { color: #1565c0; }
+.webscribeai-cell-result.is-queued     { color: #8c8f94; font-weight: normal; }
 
-/* Row highlight during processing */
+.webscribeai-cell-result.is-queued::before,
+.webscribeai-cell-result.is-processing::before {
+    font-family: dashicons;
+    font-weight: normal;
+    font-size: 14px;
+    line-height: 1;
+    vertical-align: -2px;
+    margin-right: 3px;
+    display: inline-block;
+}
+
+.webscribeai-cell-result.is-queued::before     { content: "\f469"; } /* clock */
+.webscribeai-cell-result.is-processing::before { content: "\f463"; animation: webscribeai-spin 1s linear infinite; } /* update */
+
+@keyframes webscribeai-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Row highlight by job status */
+tr.webscribeai-queued td {
+    color: #8c8f94;
+}
+
 tr.webscribeai-processing {
     background: #e8f0fe !important;
+    box-shadow: inset 3px 0 0 #2271b1;
+}
+
+/* The job is about to overwrite these rows' meta — no inline editing. */
+tr.webscribeai-queued .webscribeai-edit-btn,
+tr.webscribeai-processing .webscribeai-edit-btn {
+    visibility: hidden;
 }
 
 tr.webscribeai-done {
@@ -410,10 +680,6 @@ tr.webscribeai-errored {
 }
 
 /* ---- Pagination ---- */
-
-tr.webscribeai-paged-hidden {
-    display: none;
-}
 
 .webscribeai-pagination {
     display: flex;

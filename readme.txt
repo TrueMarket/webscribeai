@@ -4,7 +4,7 @@ Tags: seo, meta, ai
 Requires at least: 6.0
 Tested up to: 7.0.2
 Requires PHP: 8.0
-Stable tag: 0.2.4
+Stable tag: 0.2.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,6 +78,9 @@ Currently only The SEO Framework is natively supported. Yoast SEO and Rank Math 
 Updates are served from the plugin's public GitHub repository. When a new release or tag is published there with a higher version number, WordPress will offer the update on the Plugins screen.
 
 == Changelog ==
+
+= 0.2.5 =
+* Rebuilt the Bulk Populate table for better UX.
 
 = 0.2.4 =
 * Updated Anthropic models to Claude Opus 5.5, Sonnet 5.5, Haiku 5.5 and Fable 5.1 (Opus 5.5 is the new default).

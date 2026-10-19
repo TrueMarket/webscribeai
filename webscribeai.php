@@ -3,7 +3,7 @@
  * Plugin Name:       WebscribeAI
  * Plugin URI:        https://en-ca.wordpress.org/plugins/webscribeai/
  * Description:       Automatically populate SEO meta data using AI. Integrates with The SEO Framework and works out of the box.
- * Version:           0.2.4
+ * Version:           0.2.5
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            True Market
@@ -17,7 +17,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Plugin constants
-define( 'WEBSCRIBEAI_VERSION', '0.2.4' );
+define( 'WEBSCRIBEAI_VERSION', '0.2.5' );
 define( 'WEBSCRIBEAI_FILE', __FILE__ );
 define( 'WEBSCRIBEAI_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WEBSCRIBEAI_URL', plugin_dir_url( __FILE__ ) );
@@ -71,6 +71,7 @@ final class WebscribeAI {
 		require_once WEBSCRIBEAI_DIR . 'includes/class-webscribeai-seo.php';
 		require_once WEBSCRIBEAI_DIR . 'includes/class-webscribeai-meta-box.php';
 		require_once WEBSCRIBEAI_DIR . 'admin/class-webscribeai-admin.php';
+		require_once WEBSCRIBEAI_DIR . 'admin/class-webscribeai-bulk-table.php';
 		require_once WEBSCRIBEAI_DIR . 'admin/class-webscribeai-ajax.php';
 	}
 

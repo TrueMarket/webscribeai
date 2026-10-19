@@ -28,6 +28,10 @@ class WebscribeAI_Ajax {
 		// Bulk removal of a single SEO meta field (settings page).
 		add_action( 'wp_ajax_webscribeai_bulk_remove', [ $this, 'handle_bulk_remove' ] );
 
+		// Bulk Populate table: one page of rows, and every ID matching a filter.
+		add_action( 'wp_ajax_webscribeai_bulk_list', [ $this, 'handle_bulk_list' ] );
+		add_action( 'wp_ajax_webscribeai_bulk_ids',  [ $this, 'handle_bulk_ids' ] );
+
 		// Persist / clear the resumable bulk queue.
 		add_action( 'wp_ajax_webscribeai_save_queue',  [ $this, 'handle_save_queue' ] );
 		add_action( 'wp_ajax_webscribeai_clear_queue', [ $this, 'handle_clear_queue' ] );
@@ -160,9 +164,11 @@ class WebscribeAI_Ajax {
 
 		if ( ! $needs_title && ! $needs_description ) {
 			wp_send_json_success( [
-				'status'  => 'skipped',
-				'post_id' => $post_id,
-				'message' => __( 'Skipped — meta data already exists.', 'webscribeai' ),
+				'status'     => 'skipped',
+				'post_id'    => $post_id,
+				'post_title' => get_the_title( $post_id ),
+				'message'    => __( 'Skipped — meta data already exists.', 'webscribeai' ),
+				'usage'      => $this->get_usage_payload(),
 			] );
 		}
 
@@ -172,8 +178,10 @@ class WebscribeAI_Ajax {
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( [
 				'post_id'       => $post_id,
+				'post_title'    => get_the_title( $post_id ),
 				'message'       => $result->get_error_message(),
 				'limit_reached' => 'webscribeai_limit_reached' === $result->get_error_code(),
+				'usage'         => $this->get_usage_payload(),
 			] );
 		}
 
@@ -194,10 +202,58 @@ class WebscribeAI_Ajax {
 		wp_send_json_success( [
 			'status'      => 'generated',
 			'post_id'     => $post_id,
+			'post_title'  => get_the_title( $post_id ),
 			'field'       => $field,
 			'title'       => $saved_title,
 			'description' => $saved_description,
 			'message'     => __( 'Generated and saved.', 'webscribeai' ),
+			'usage'       => $this->get_usage_payload(),
+		] );
+	}
+
+	/**
+	 * Return one page of Bulk Populate table rows (AJAX).
+	 *
+	 * With `include`, returns exactly those posts in that order (the rows of
+	 * a running job); otherwise applies the post type / view / search filters
+	 * and also returns the per-view counts.
+	 */
+	public function handle_bulk_list(): void {
+		$this->verify_nonce();
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => __( 'Permission denied.', 'webscribeai' ) ] );
+		}
+
+		$args   = WebscribeAI_Bulk_Table::parse_args( wp_unslash( $_POST ) );
+		$result = WebscribeAI_Bulk_Table::query( $args );
+
+		wp_send_json_success( [
+			'html'    => WebscribeAI_Bulk_Table::render_rows( $result['rows'] ),
+			'total'   => $result['total'],
+			'counts'  => empty( $args['include'] ) ? WebscribeAI_Bulk_Table::counts( $args ) : null,
+			'perPage' => WebscribeAI_Bulk_Table::PER_PAGE,
+		] );
+	}
+
+	/**
+	 * Return the ID and title of every post matching the filters (AJAX).
+	 *
+	 * Used for "Select all matching" and "Generate all in this view". With
+	 * `needs_meta`, only posts missing a title or description are returned.
+	 */
+	public function handle_bulk_ids(): void {
+		$this->verify_nonce();
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => __( 'Permission denied.', 'webscribeai' ) ] );
+		}
+
+		$args       = WebscribeAI_Bulk_Table::parse_args( wp_unslash( $_POST ) );
+		$needs_meta = $this->request_to_bool( $_POST['needs_meta'] ?? false );
+
+		wp_send_json_success( [
+			'items' => WebscribeAI_Bulk_Table::get_ids( $args, $needs_meta ),
 		] );
 	}
 
@@ -288,10 +344,9 @@ class WebscribeAI_Ajax {
 	/**
 	 * Persist the failed rows from a just-finished bulk generation run.
 	 *
-	 * Read once (and cleared) on the next page load so the failed rows can be
-	 * re-highlighted after the completion modal's reload — see
-	 * WebscribeAI_Admin::enqueue_assets(). An empty list clears any
-	 * previously stored errors.
+	 * Backs the Bulk Populate "Errors" view and the failed-row highlighting
+	 * (see WebscribeAI_Bulk_Table) until the next run replaces the list. An
+	 * empty list clears any previously stored errors.
 	 */
 	public function handle_save_errors(): void {
 		$this->verify_nonce();
@@ -339,6 +394,19 @@ class WebscribeAI_Ajax {
 		if ( ! check_ajax_referer( 'webscribeai_ajax', 'nonce', false ) ) {
 			wp_send_json_error( [ 'message' => __( 'Security check failed.', 'webscribeai' ) ] );
 		}
+	}
+
+	/**
+	 * Current monthly usage, returned with each bulk generation so the page
+	 * can update its usage count without a reload.
+	 *
+	 * @return array{count: int, limit: int}
+	 */
+	private function get_usage_payload(): array {
+		return [
+			'count' => WebscribeAI_Usage::get_count(),
+			'limit' => WebscribeAI_Usage::get_limit(),
+		];
 	}
 
 	/**

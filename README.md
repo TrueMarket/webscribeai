@@ -5,9 +5,12 @@ pages using AI (Anthropic Claude or OpenAI GPT).
 
 - **Per-post generation:** a meta box on the post/page edit screen generates a title
   and description you can preview before applying.
-- **Bulk Populate:** pick any mix of posts and pages and generate meta for all of them
-  in one run. A validity bar shows whether each existing title and description is a
-  good length.
+- **Bulk Populate:** filter posts by type, title search, or view (missing title,
+  missing description, too long, errors from the last run), then generate meta for a
+  selection or for everything in the view. Rows load a page at a time, so large sites
+  stay fast. While a job runs, a sticky panel shows progress, the current post, an ETA,
+  and the latest results, and the table follows the job page by page. A validity bar
+  shows whether each existing title and description is a good length.
 - **The SEO Framework integration:** writes straight into TSF's own fields when TSF
   is active, and follows its title separator and site-title settings.
 - **Standalone mode:** with no SEO plugin installed, the plugin prints
@@ -70,6 +73,7 @@ Other details:
 | `includes/class-webscribeai-usage.php` | Monthly generation cap |
 | `includes/class-webscribeai-encryption.php` | API key encryption |
 | `admin/` | Settings / Bulk Populate screens and AJAX handlers |
+| `admin/class-webscribeai-bulk-table.php` | Bulk Populate queries (filters, view counts, paging) and row rendering |
 | `assets/` | Admin and meta box CSS/JS |
 | `readme.txt` | WordPress-format readme, including the changelog |
 | `vendor/plugin-update-checker/` | Third-party update library (don't edit) |
