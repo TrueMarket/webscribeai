@@ -4,7 +4,7 @@ Tags: seo, meta, ai
 Requires at least: 6.0
 Tested up to: 7.0.2
 Requires PHP: 8.0
-Stable tag: 0.2.3
+Stable tag: 0.2.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,7 +59,7 @@ WebscribeAI checks its public GitHub repository for new releases and shows avail
 
 = Which AI provider should I use? =
 
-Anthropic's Claude models are recommended for their precise, structured output which is ideal for SEO copy that must fit within character limits. Claude Opus 4.8 is the default model, and Claude Fable 5 is available for the most demanding tasks.
+Anthropic's Claude models are recommended for their precise, structured output which is ideal for SEO copy that must fit within character limits. Claude Opus 5.5 is the default model, and Claude Fable 5.1 is available for the most demanding tasks.
 
 = Does this work with custom post types? =
 
@@ -78,6 +78,14 @@ Currently only The SEO Framework is natively supported. Yoast SEO and Rank Math 
 Updates are served from the plugin's public GitHub repository. When a new release or tag is published there with a higher version number, WordPress will offer the update on the Plugins screen.
 
 == Changelog ==
+
+= 0.2.4 =
+* Updated Anthropic models to Claude Opus 5.5, Sonnet 5.5, Haiku 5.5 and Fable 5.1 (Opus 5.5 is the new default).
+* Updated OpenAI models to GPT-6 Luna, GPT-6.1 Sol and GPT-6 Astra (GPT-6 Luna is the new default).
+* Added a fallback to the provider's default model when the saved model is no longer available.
+* Set low reasoning effort on Anthropic requests for faster, cheaper generation.
+* Enabled server-side refusal fallbacks for supported Claude models.
+* Fixed provider group labels still showing in the model dropdown after switching providers.
 
 = 0.2.3 =
 * Removed Freemius vendor code.

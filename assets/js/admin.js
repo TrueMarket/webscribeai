@@ -12,7 +12,7 @@
     var $modelSelect    = $( '#webscribeai_ai_model' );
 
     function filterModelsByProvider( provider ) {
-        $modelSelect.find( 'option' ).each( function () {
+        $modelSelect.find( 'optgroup, option' ).each( function () {
             var $opt = $( this );
             var show = $opt.data( 'provider' ) === provider;
             $opt.prop( 'disabled', ! show ).toggle( show );

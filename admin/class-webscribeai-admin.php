@@ -597,7 +597,10 @@ class WebscribeAI_Admin {
 		?>
 		<select id="webscribeai_ai_model" name="webscribeai_settings[ai_model]">
 			<?php foreach ( $models as $provider_key => $provider_models ) : ?>
-				<optgroup label="<?php echo esc_attr( ucfirst( $provider_key ) ); ?>">
+				<optgroup
+					label="<?php echo esc_attr( ucfirst( $provider_key ) ); ?>"
+					data-provider="<?php echo esc_attr( $provider_key ); ?>"
+				>
 					<?php foreach ( $provider_models as $model_key => $model_label ) : ?>
 						<option
 							value="<?php echo esc_attr( $model_key ); ?>"

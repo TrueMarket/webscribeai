@@ -63,8 +63,19 @@ class WebscribeAI_API {
 	 * Default models per provider.
 	 */
 	const DEFAULT_MODELS = [
-		'anthropic' => 'claude-opus-4-8',
-		'openai'    => 'gpt-5.4-mini',
+		'anthropic' => 'claude-opus-5-5',
+		'openai'    => 'gpt-6-luna',
+	];
+
+	/**
+	 * Anthropic models that support server-side refusal fallbacks.
+	 *
+	 * Claude Haiku 5.5 has no server-side fallback, so it's left out.
+	 */
+	const ANTHROPIC_FALLBACK_MODELS = [
+		'claude-opus-5-5',
+		'claude-sonnet-5-5',
+		'claude-fable-5-1',
 	];
 
 	/**
@@ -74,8 +85,13 @@ class WebscribeAI_API {
 		$settings        = (array) get_option( 'webscribeai_settings', [] );
 		$this->provider  = $settings['api_provider'] ?? 'anthropic';
 		$this->api_key   = WebscribeAI_Encryption::decrypt( $settings['api_key'] ?? '' );
-		$this->model     = ! empty( $settings['ai_model'] )
-			? $settings['ai_model']
+
+		// Fall back to the provider default when the saved model is no longer
+		// offered (e.g. a retired model saved by an earlier plugin version).
+		$saved_model     = $settings['ai_model'] ?? '';
+		$provider_models = self::get_available_models()[ $this->provider ] ?? [];
+		$this->model     = isset( $provider_models[ $saved_model ] )
+			? $saved_model
 			: ( self::DEFAULT_MODELS[ $this->provider ] ?? '' );
 		$this->keywords_primary   = $settings['keywords_primary'] ?? '';
 		$this->keywords_secondary = $settings['keywords_secondary'] ?? '';
@@ -384,28 +400,42 @@ Page Content:
 	 * @return array{title: string, description: string}|WP_Error
 	 */
 	private function call_anthropic( string $prompt ): array|WP_Error {
+		$headers = [
+			'x-api-key'         => $this->api_key,
+			'anthropic-version' => '2023-06-01',
+			'content-type'      => 'application/json',
+		];
+
+		// Current Claude models always think, and thinking tokens are drawn
+		// from the same max_tokens budget as the reply — 2048 (rather than a
+		// tight ~256) leaves headroom, and low effort keeps this short task
+		// fast and cheap.
+		$body = [
+			'model'         => $this->model,
+			'max_tokens'    => 2048,
+			'output_config' => [ 'effort' => 'low' ],
+			'messages'      => [
+				[
+					'role'    => 'user',
+					'content' => $prompt,
+				],
+			],
+		];
+
+		// If a safety classifier declines the request, let the API retry it
+		// on Anthropic's recommended fallback model instead of returning the
+		// refusal.
+		if ( in_array( $this->model, self::ANTHROPIC_FALLBACK_MODELS, true ) ) {
+			$headers['anthropic-beta'] = 'server-side-fallback-2026-07-01';
+			$body['fallbacks']         = 'default';
+		}
+
 		$response = wp_remote_post(
 			self::ANTHROPIC_ENDPOINT,
 			[
 				'timeout' => 60,
-				'headers' => [
-					'x-api-key'         => $this->api_key,
-					'anthropic-version' => '2023-06-01',
-					'content-type'      => 'application/json',
-				],
-				// 2048 (rather than a tight ~256) leaves headroom for models that
-				// always emit extended thinking (e.g. Claude Fable 5) — thinking
-				// tokens are drawn from the same max_tokens budget as the reply.
-				'body'    => wp_json_encode( [
-					'model'      => $this->model,
-					'max_tokens' => 2048,
-					'messages'   => [
-						[
-							'role'    => 'user',
-							'content' => $prompt,
-						],
-					],
-				] ),
+				'headers' => $headers,
+				'body'    => wp_json_encode( $body ),
 			]
 		);
 
@@ -431,9 +461,9 @@ Page Content:
 		}
 
 		// Response content is a list of typed blocks (thinking, text, ...);
-		// find the text block rather than assuming it's first — models with
-		// extended thinking on by default (e.g. Claude Fable 5) put one or
-		// more thinking blocks ahead of it.
+		// find the text block rather than assuming it's first — current
+		// Claude models think by default and put one or more thinking blocks
+		// ahead of it (and a fallback block, if the request fell back).
 		$text = '';
 		foreach ( (array) ( $body['content'] ?? [] ) as $block ) {
 			if ( 'text' === ( $block['type'] ?? '' ) ) {
@@ -460,7 +490,7 @@ Page Content:
 					'Authorization' => 'Bearer ' . $this->api_key,
 					'Content-Type'  => 'application/json',
 				],
-				// GPT-5 series are reasoning models: they take
+				// GPT-5/6 series are reasoning models: they take
 				// max_completion_tokens (not max_tokens), don't support
 				// temperature, and draw reasoning tokens from the same
 				// budget as the reply, so 2048 (rather than a tight ~256)
@@ -604,16 +634,15 @@ Page Content:
 	public static function get_available_models(): array {
 		return [
 			'anthropic' => [
-				'claude-opus-4-8'          => 'Claude Opus 4.8 (Recommended)',
-				'claude-sonnet-4-6'        => 'Claude Sonnet 4.6 (Balanced)',
-				'claude-haiku-4-5-20251001' => 'Claude Haiku 4.5 (Fastest)',
-				'claude-fable-5'           => 'Claude Fable 5 (Most Capable)',
+				'claude-opus-5-5'   => 'Claude Opus 5.5 (Recommended)',
+				'claude-sonnet-5-5' => 'Claude Sonnet 5.5 (Balanced)',
+				'claude-haiku-5-5'  => 'Claude Haiku 5.5 (Fastest)',
+				'claude-fable-5-1'  => 'Claude Fable 5.1 (Most Capable)',
 			],
 			'openai' => [
-				'gpt-5.4-mini' => 'GPT-5.4 Mini (Recommended)',
-				'gpt-5.4'      => 'GPT-5.4 (Balanced)',
-				'gpt-5.4-nano' => 'GPT-5.4 Nano (Fastest)',
-				'gpt-5.5'      => 'GPT-5.5 (Most Capable)',
+				'gpt-6-luna'  => 'GPT-6 Luna (Recommended, Fastest)',
+				'gpt-6.1-sol' => 'GPT-6.1 Sol (Balanced)',
+				'gpt-6-astra' => 'GPT-6 Astra (Most Capable)',
 			],
 		];
 	}
